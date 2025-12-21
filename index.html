@@ -1,0 +1,1382 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ADESH Invoice</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+<style>
+    body { 
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+        background: #f8fafc;
+        padding: 24px;
+        margin: 0;
+        color: #334155;
+    }
+
+    .container {
+        background: #ffffff;
+        padding: 32px;
+        border-radius: 12px;
+        max-width: 1100px;
+        margin: 0 auto;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2e8f0;
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 32px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .header h2 {
+        color: #0f172a;
+        font-size: 28px;
+        font-weight: 600;
+        margin: 0 0 4px 0;
+        letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 400;
+        margin: 0;
+    }
+
+    .client-info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-bottom: 32px;
+    }
+
+    @media (max-width: 768px) {
+        .client-info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-group label {
+        font-weight: 500;
+        color: #475569;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-group input {
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        padding: 10px 12px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        background: #f8fafc;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: #475569;
+        box-shadow: 0 0 0 3px rgba(71, 85, 105, 0.08);
+        background: #ffffff;
+    }
+
+    .form-group input::placeholder {
+        color: #94a3b8;
+    }
+
+    .invoice-table-container {
+        overflow-x: auto;
+        margin-bottom: 24px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px;
+    }
+
+    thead {
+        background: #f1f5f9;
+    }
+
+    th {
+        padding: 14px 12px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 13px;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    tbody tr {
+        border-bottom: 1px solid #f1f5f9;
+        transition: background-color 0.2s ease;
+    }
+
+    tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    td {
+        padding: 14px 12px;
+        vertical-align: middle;
+    }
+
+    td input {
+        width: 100%;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-size: 14px;
+        background: #ffffff;
+        box-sizing: border-box;
+    }
+
+    td input:focus {
+        outline: none;
+        border-color: #475569;
+        box-shadow: 0 0 0 2px rgba(71, 85, 105, 0.08);
+    }
+
+    .amt {
+        font-weight: 500;
+        color: #0f172a;
+        font-family: 'Courier New', monospace;
+    }
+
+    .btn-add {
+        background: #475569;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 32px;
+    }
+
+    .btn-add:hover {
+        background: #334155;
+        transform: translateY(-1px);
+    }
+
+    .btn-remove {
+        background: #ef4444;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-remove:hover {
+        background: #dc2626;
+    }
+
+    .totals-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+        margin-bottom: 32px;
+    }
+
+    @media (max-width: 768px) {
+        .totals-container {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .subtotal-box {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid #475569;
+    }
+
+    .subtotal-box h3 {
+        margin: 0 0 12px 0;
+        font-size: 16px;
+        font-weight: 500;
+        color: #64748b;
+    }
+
+    .subtotal-box div {
+        font-size: 28px;
+        font-weight: 600;
+        color: #0f172a;
+        font-family: 'Courier New', monospace;
+    }
+
+    .grandtotal-box {
+        background: #0f172a;
+        color: white;
+        padding: 24px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .grandtotal-box h2 {
+        margin: 0 0 16px 0;
+        font-size: 18px;
+        font-weight: 500;
+        color: #cbd5e1;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .grandtotal-box div {
+        font-size: 36px;
+        font-weight: 600;
+        color: #ffffff;
+        font-family: 'Courier New', monospace;
+    }
+
+    .btn-download {
+        background: #0f172a;
+        color: white;
+        border: none;
+        padding: 16px 28px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    .btn-download:hover {
+        background: #1e293b;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+    }
+
+    .totals-left .form-group {
+        margin-top: 20px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+        body {
+            padding: 16px;
+        }
+        
+        .container {
+            padding: 20px;
+        }
+        
+        .header h2 {
+            font-size: 24px;
+        }
+        
+        td, th {
+            padding: 10px 8px;
+        }
+        
+        .grandtotal-box div {
+            font-size: 28px;
+        }
+    }
+</style>
+</head>
+
+<body>
+<div class="container">
+    <div class="header">
+        <h2>ADESH INVOICE</h2>
+        <p class="subtitle">Professional Billing & Invoicing System</p>
+    </div>
+
+    <div class="client-info-grid">
+        <div class="form-group">
+            <label for="clientName">Client Name</label>
+            <input id="clientName" list="clientList" placeholder="Enter client name" required>
+            <datalist id="clientList"></datalist>
+        </div>
+        
+        <div class="form-group">
+            <label for="mobile">Mobile Number</label>
+            <input id="mobile" value="9979698983" type="tel" pattern="[0-9]{10}" maxlength="10" placeholder="10 digit mobile" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="invoiceNo">Invoice Number</label>
+            <input id="invoiceNo" value="DEC/543" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="invoiceDate">Invoice Date</label>
+            <input id="invoiceDate" type="date" required>
+        </div>
+    </div>
+
+    <div class="invoice-table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Sr No</th>
+                    <th>Product Description</th>
+                    <th>PCS</th>
+                    <th>KGS</th>
+                    <th>Rate (₹)</th>
+                    <th>Amount (₹)</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="billBody"></tbody>
+        </table>
+    </div>
+
+    <button class="btn-add" onclick="addRow()">
+        <span style="font-size: 18px;">+</span> Add New Item
+    </button>
+
+    <div class="totals-container">
+        <div class="totals-left">
+            <div class="subtotal-box">
+                <h3>Sub Total</h3>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="color: #64748b; font-size: 20px;">₹</span>
+                    <span id="subTotal">0.00</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="roundOff">Round Off Adjustment (₹)</label>
+                <input type="number" id="roundOff" value="0" onchange="calculateTotals()" placeholder="Enter positive or negative value">
+            </div>
+        </div>
+        
+        <div class="totals-right">
+            <div class="grandtotal-box">
+                <h2>GRAND TOTAL</h2>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <span style="font-size: 22px;">₹</span>
+                    <span id="grandTotal">0.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn-download" onclick="saveAndDownload()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 5px;">
+            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+        </svg>
+        Save & Download Invoice PDF
+    </button>
+</div>
+
+<script>
+// All JavaScript functionality remains exactly the same as in your original code
+//for date
+function setTodayDate() {
+  const today = new Date().toISOString().split("T")[0];
+  document.getElementById("invoiceDate").value = today;
+}
+
+function addRow(){
+ const row=document.createElement("tr");
+ row.innerHTML=`
+ <td class="sr"></td>
+ <td><input placeholder="Product name"></td>
+ <td><input type="number" value="0" onchange="calculateTotals()" placeholder="0"></td>
+ <td><input type="number" value="0" onchange="calculateTotals()" placeholder="0"></td>
+ <td><input type="number" value="0" onchange="calculateTotals()" placeholder="0.00"></td>
+ <td class="amt">0.00</td>
+ <td><button class="btn-remove" onclick="this.parentNode.parentNode.remove();calculateTotals()">X</button></td>`;
+ document.getElementById("billBody").appendChild(row);
+ updateSr();
+}
+
+function updateSr(){
+ document.querySelectorAll(".sr").forEach((c,i)=>c.innerText=i+1);
+}
+
+function calculateTotals(){
+ let total=0;
+ document.querySelectorAll("#billBody tr").forEach(r=>{
+   const pcs=+r.cells[2].querySelector("input").value||0;
+   const kgs=+r.cells[3].querySelector("input").value||0;
+   const rate=+r.cells[4].querySelector("input").value||0;
+   const amt=(kgs||pcs)*rate;
+   r.querySelector(".amt").innerText=amt.toFixed(2);
+   total+=amt;
+ });
+ const round=+document.getElementById("roundOff").value||0;
+ document.getElementById("subTotal").innerText=total.toFixed(2);
+ document.getElementById("grandTotal").innerText=(total+round).toFixed(2);
+ updateSr();
+}
+
+// Function to convert number to words (for amount in words)
+function numberToWords(num) {
+    const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+    const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    
+    if (num === 0) return 'Zero';
+    
+    let n = ('000000000' + Math.floor(num)).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+    if (!n) return '';
+    
+    let str = '';
+    str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
+    str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
+    str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Thousand ' : '';
+    str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'Hundred ' : '';
+    str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) : '';
+    
+    return str.trim() + ' Only';
+}
+
+async function saveAndDownload(){
+ const items=[];
+ document.querySelectorAll("#billBody tr").forEach(r=>{
+   items.push({
+     srNo:r.cells[0].innerText,
+     productName:r.cells[1].querySelector("input").value,
+     unitPCS:+r.cells[2].querySelector("input").value||0,
+     qtyKGS:+r.cells[3].querySelector("input").value||0,
+     rate:+r.cells[4].querySelector("input").value||0,
+     amount:+r.querySelector(".amt").innerText||0
+   });
+ });
+
+ const data={
+   clientName:clientName.value,
+   mobile:mobile.value,
+   invoiceNo:invoiceNo.value,
+   invoiceDate:invoiceDate.value,
+   items,
+   subTotal:+subTotal.innerText,
+   roundOff:+roundOff.value||0,
+   grandTotal:+grandTotal.innerText
+ };
+
+ // ✅ Save to backend
+ const res=await fetch("http://localhost:5000/api/invoice",{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify(data)
+ });
+ const result=await res.json();
+
+ if(res.ok){
+   generatePDF(data);   // 👉 download PDF
+   alert(result.message||"Saved!");
+   loadTenants();
+ } else {
+   alert("Error saving invoice");
+ }
+}
+
+// ✅ UPDATED PDF generator to match demo-invoice.jpg format
+function generatePDF(data){
+ const { jsPDF } = window.jspdf;
+ const doc = new jsPDF();
+
+ doc.setFont("helvetica", "normal");
+
+ // ===== HEADER =====
+ doc.setFontSize(16);
+ doc.setFont("helvetica", "bold");
+ doc.text("ADESH ALUMINIUM", 105, 15, { align: "center" });
+
+ doc.setFontSize(11);
+ doc.setFont("helvetica", "normal");
+ doc.text("CHALLAN", 105, 22, { align: "center" });
+
+ // ===== CLIENT BOX =====
+ doc.rect(14, 28, 182, 18);
+ doc.line(120, 28, 120, 46);
+
+ doc.setFontSize(10);
+ doc.text(`M/s: ${data.clientName}`, 18, 35);
+ doc.text(`Mo: ${data.mobile}`, 18, 42);
+
+ doc.text(`Invoice No: ${data.invoiceNo}`, 125, 35);
+ doc.text(`Date: ${data.invoiceDate}`, 125, 42);
+
+ // ===== TABLE HEADER =====
+ let y = 52;
+ doc.rect(14, y, 182, 8);
+ doc.line(25, y, 25, y+8);
+ doc.line(90, y, 90, y+8);
+ doc.line(115, y, 115, y+8);
+ doc.line(140, y, 140, y+8);
+ doc.line(165, y, 165, y+8);
+
+ doc.setFont("helvetica", "bold");
+ doc.text("Sr", 18, y+5);
+ doc.text("Product", 35, y+5);
+ doc.text("Qty", 97, y+5);
+ doc.text("Unit", 122, y+5);
+ doc.text("Rate", 145, y+5);
+ doc.text("Amount", 168, y+5);
+
+ // ===== ITEMS =====
+ doc.setFont("helvetica", "normal");
+ y += 8;
+
+ data.items.forEach((item) => {
+   doc.rect(14, y, 182, 8);
+   doc.line(25, y, 25, y+8);
+   doc.line(90, y, 90, y+8);
+   doc.line(115, y, 115, y+8);
+   doc.line(140, y, 140, y+8);
+   doc.line(165, y, 165, y+8);
+
+   let qty = item.qtyKGS > 0 ? item.qtyKGS.toFixed(3) : item.unitPCS;
+   let unit = item.qtyKGS > 0 ? "KG" : "PCS";
+
+   doc.text(item.srNo, 18, y+5);
+   doc.text(item.productName || "", 28, y+5);
+   doc.text(String(qty), 98, y+5);
+   doc.text(unit, 123, y+5);
+   doc.text(item.rate.toFixed(2), 145, y+5);
+   doc.text(item.amount.toFixed(2), 168, y+5);
+
+   y += 8;
+ });
+
+ // ===== AMOUNT IN WORDS =====
+ y += 8;
+ doc.setFont("helvetica", "bold");
+ doc.text("Bill Amount:", 14, y);
+ doc.setFont("helvetica", "normal");
+ doc.text(numberToWords(data.grandTotal), 40, y);
+
+ // ===== TOTAL BOX =====
+ y += 8;
+ doc.rect(120, y-6, 76, 18);
+ doc.text("Round Off", 125, y);
+ doc.text("Grand Total", 125, y+8);
+
+ doc.text(data.roundOff.toFixed(2), 180, y, {align:"right"});
+ doc.text(data.grandTotal.toFixed(2), 180, y+8, {align:"right"});
+
+ // ===== SIGNATURE =====
+ y += 30;
+ doc.text("For, Adesh Aluminium", 14, y);
+ doc.line(140, y, 190, y);
+ doc.text("(Authorised Signature)", 145, y+6);
+
+ // ===== SAVE =====
+ doc.save(`Invoice_${data.invoiceNo}.pdf`);
+}
+
+async function loadTenants() {
+ try {
+   const res = await fetch("http://localhost:5000/api/tenants");
+   const data = await res.json();
+   const list = document.getElementById("clientList");
+   list.innerHTML="";
+   data.forEach(t=>{
+     const opt=document.createElement("option");
+     opt.value=t.name;
+     list.appendChild(opt);
+   });
+ } catch (e) {
+   console.error("Failed to load tenants", e);
+ }
+}
+
+window.onload=()=>{
+ addRow();
+ loadTenants();
+ setTodayDate();
+};
+</script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ADESH Invoice</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+<style>
+    body { 
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+        background: #f8fafc;
+        padding: 24px;
+        margin: 0;
+        color: #334155;
+    }
+
+    .container {
+        background: #ffffff;
+        padding: 32px;
+        border-radius: 12px;
+        max-width: 1100px;
+        margin: 0 auto;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2e8f0;
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 32px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .header h2 {
+        color: #0f172a;
+        font-size: 28px;
+        font-weight: 600;
+        margin: 0 0 4px 0;
+        letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 400;
+        margin: 0;
+    }
+
+    .client-info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-bottom: 32px;
+    }
+
+    @media (max-width: 768px) {
+        .client-info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-group label {
+        font-weight: 500;
+        color: #475569;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-group input {
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        padding: 10px 12px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        background: #f8fafc;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: #475569;
+        box-shadow: 0 0 0 3px rgba(71, 85, 105, 0.08);
+        background: #ffffff;
+    }
+
+    .form-group input::placeholder {
+        color: #94a3b8;
+    }
+
+    /* Custom datalist styling */
+    #clientList option {
+        padding: 8px 12px;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    #clientList option:hover {
+        background: #f1f5f9;
+    }
+
+    .client-option {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        align-items: center;
+    }
+
+    .client-name {
+        font-weight: 500;
+        color: #334155;
+    }
+
+    .client-stats {
+        display: flex;
+        gap: 16px;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .paid-stat {
+        color: #16a34a;
+        font-weight: 500;
+    }
+
+    .pending-stat {
+        color: #dc2626;
+        font-weight: 500;
+    }
+
+    .invoice-table-container {
+        overflow-x: auto;
+        margin-bottom: 24px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px;
+    }
+
+    thead {
+        background: #f1f5f9;
+    }
+
+    th {
+        padding: 14px 12px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 13px;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    tbody tr {
+        border-bottom: 1px solid #f1f5f9;
+        transition: background-color 0.2s ease;
+    }
+
+    tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    td {
+        padding: 14px 12px;
+        vertical-align: middle;
+    }
+
+    td input {
+        width: 100%;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-size: 14px;
+        background: #ffffff;
+        box-sizing: border-box;
+    }
+
+    td input:focus {
+        outline: none;
+        border-color: #475569;
+        box-shadow: 0 0 0 2px rgba(71, 85, 105, 0.08);
+    }
+
+    .amt {
+        font-weight: 500;
+        color: #0f172a;
+        font-family: 'Courier New', monospace;
+    }
+
+    .btn-add {
+        background: #475569;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 32px;
+    }
+
+    .btn-add:hover {
+        background: #334155;
+        transform: translateY(-1px);
+    }
+
+    .btn-remove {
+        background: #ef4444;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-remove:hover {
+        background: #dc2626;
+    }
+
+    .totals-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+        margin-bottom: 32px;
+    }
+
+    @media (max-width: 768px) {
+        .totals-container {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .subtotal-box {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid #475569;
+    }
+
+    .subtotal-box h3 {
+        margin: 0 0 12px 0;
+        font-size: 16px;
+        font-weight: 500;
+        color: #64748b;
+    }
+
+    .subtotal-box div {
+        font-size: 28px;
+        font-weight: 600;
+        color: #0f172a;
+        font-family: 'Courier New', monospace;
+    }
+
+    .grandtotal-box {
+        background: #0f172a;
+        color: white;
+        padding: 24px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .grandtotal-box h2 {
+        margin: 0 0 16px 0;
+        font-size: 18px;
+        font-weight: 500;
+        color: #cbd5e1;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .grandtotal-box div {
+        font-size: 36px;
+        font-weight: 600;
+        color: #ffffff;
+        font-family: 'Courier New', monospace;
+    }
+
+    .btn-download {
+        background: #0f172a;
+        color: white;
+        border: none;
+        padding: 16px 28px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    .btn-download:hover {
+        background: #1e293b;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+    }
+
+    .totals-left .form-group {
+        margin-top: 20px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+        body {
+            padding: 16px;
+        }
+        
+        .container {
+            padding: 20px;
+        }
+        
+        .header h2 {
+            font-size: 24px;
+        }
+        
+        td, th {
+            padding: 10px 8px;
+        }
+        
+        .grandtotal-box div {
+            font-size: 28px;
+        }
+        
+        .client-stats {
+            flex-direction: column;
+            gap: 4px;
+        }
+    }
+</style>
+</head>
+
+<body>
+<div class="container">
+    <div class="header">
+        <h2>ADESH INVOICE</h2>
+        <p class="subtitle">Professional Billing & Invoicing System</p>
+    </div>
+
+    <div class="client-info-grid">
+        <div class="form-group">
+            <label for="clientName">Client Name</label>
+            <input id="clientName" list="clientList" placeholder="Enter client name" required>
+            <datalist id="clientList"></datalist>
+        </div>
+        
+        <div class="form-group">
+            <label for="mobile">Mobile Number</label>
+            <input id="mobile" value="9979698983" type="tel" pattern="[0-9]{10}" maxlength="10" placeholder="10 digit mobile" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="invoiceNo">Invoice Number</label>
+            <input id="invoiceNo" value="DEC/543" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="invoiceDate">Invoice Date</label>
+            <input id="invoiceDate" type="date" required>
+        </div>
+    </div>
+
+    <div class="invoice-table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Sr No</th>
+                    <th>Product Description</th>
+                    <th>PCS</th>
+                    <th>KGS</th>
+                    <th>Rate (₹)</th>
+                    <th>Amount (₹)</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="billBody"></tbody>
+        </table>
+    </div>
+
+    <button class="btn-add" onclick="addRow()">
+        <span style="font-size: 18px;">+</span> Add New Item
+    </button>
+
+    <div class="totals-container">
+        <div class="totals-left">
+            <div class="subtotal-box">
+                <h3>Sub Total</h3>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="color: #64748b; font-size: 20px;">₹</span>
+                    <span id="subTotal">0.00</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="roundOff">Round Off Adjustment (₹)</label>
+                <input type="number" id="roundOff" value="0" onchange="calculateTotals()" placeholder="Enter positive or negative value">
+            </div>
+        </div>
+        
+        <div class="totals-right">
+            <div class="grandtotal-box">
+                <h2>GRAND TOTAL</h2>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <span style="font-size: 22px;">₹</span>
+                    <span id="grandTotal">0.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn-download" onclick="saveAndDownload()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 5px;">
+            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+        </svg>
+        Save & Download Invoice PDF
+    </button>
+</div>
+
+<script>
+// Store client payment data
+let clientPaymentData = {};
+
+//for date
+function setTodayDate() {
+  const today = new Date().toISOString().split("T")[0];
+  document.getElementById("invoiceDate").value = today;
+}
+
+function addRow(){
+ const row=document.createElement("tr");
+ row.innerHTML=`
+ <td class="sr"></td>
+ <td><input placeholder="Product name"></td>
+ <td><input type="number" value="0" onchange="calculateTotals()" placeholder="0"></td>
+ <td><input type="number" value="0" onchange="calculateTotals()" placeholder="0"></td>
+ <td><input type="number" value="0" onchange="calculateTotals()" placeholder="0.00"></td>
+ <td class="amt">0.00</td>
+ <td><button class="btn-remove" onclick="this.parentNode.parentNode.remove();calculateTotals()">X</button></td>`;
+ document.getElementById("billBody").appendChild(row);
+ updateSr();
+}
+
+function updateSr(){
+ document.querySelectorAll(".sr").forEach((c,i)=>c.innerText=i+1);
+}
+
+function calculateTotals(){
+ let total=0;
+ document.querySelectorAll("#billBody tr").forEach(r=>{
+   const pcs=+r.cells[2].querySelector("input").value||0;
+   const kgs=+r.cells[3].querySelector("input").value||0;
+   const rate=+r.cells[4].querySelector("input").value||0;
+   const amt=(kgs||pcs)*rate;
+   r.querySelector(".amt").innerText=amt.toFixed(2);
+   total+=amt;
+ });
+ const round=+document.getElementById("roundOff").value||0;
+ document.getElementById("subTotal").innerText=total.toFixed(2);
+ document.getElementById("grandTotal").innerText=(total+round).toFixed(2);
+ updateSr();
+}
+
+// Function to convert number to words (for amount in words)
+function numberToWords(num) {
+    const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+    const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    
+    if (num === 0) return 'Zero';
+    
+    let n = ('000000000' + Math.floor(num)).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+    if (!n) return '';
+    
+    let str = '';
+    str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
+    str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
+    str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Thousand ' : '';
+    str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'Hundred ' : '';
+    str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) : '';
+    
+    return str.trim() + ' Only';
+}
+
+// Function to get client payment data
+async function getClientPaymentData(clientName) {
+    try {
+        const invoicesRes = await fetch(`http://localhost:5000/api/search?q=${encodeURIComponent(clientName)}`);
+        const invoices = await invoicesRes.json();
+        
+        let totalPaid = 0;
+        let totalPending = 0;
+        
+        if (invoices && invoices.length > 0) {
+            invoices.forEach(inv => {
+                const grandTotal = parseFloat(inv.grand_total) || 0;
+                const paidAmount = parseFloat(inv.paid_amount) || 0;
+                
+                totalPaid += paidAmount;
+                totalPending += (grandTotal - paidAmount);
+            });
+        }
+        
+        return {
+            paid: totalPaid,
+            pending: totalPending
+        };
+    } catch (error) {
+        console.error(`Error loading payment data for ${clientName}:`, error);
+        return {
+            paid: 0,
+            pending: 0
+        };
+    }
+}
+
+// Function to populate datalist with client payment info
+async function loadTenantsWithPaymentInfo() {
+    try {
+        const res = await fetch("http://localhost:5000/api/tenants");
+        const data = await res.json();
+        const list = document.getElementById("clientList");
+        list.innerHTML = "";
+        
+        // Store client payment data
+        clientPaymentData = {};
+        
+        // Process each client to get payment info
+        const clientPromises = data.map(async (client) => {
+            const paymentData = await getClientPaymentData(client.name);
+            clientPaymentData[client.name] = paymentData;
+            
+            const opt = document.createElement("option");
+            opt.value = client.name;
+            opt.innerHTML = `
+                <div class="client-option">
+                    <span class="client-name">${client.name}</span>
+                    <div class="client-stats">
+                        <span class="paid-stat">Paid: ₹${paymentData.paid.toFixed(2)}</span>
+                        <span class="pending-stat">Pending: ₹${paymentData.pending.toFixed(2)}</span>
+                    </div>
+                </div>
+            `;
+            return opt;
+        });
+        
+        // Wait for all payment data to be fetched
+        const options = await Promise.all(clientPromises);
+        
+        // Add options to datalist
+        options.forEach(opt => {
+            list.appendChild(opt);
+        });
+        
+    } catch (e) {
+        console.error("Failed to load tenants with payment info", e);
+    }
+}
+
+// Event listener for when client name is selected
+document.getElementById('clientName').addEventListener('input', async function(e) {
+    const selectedName = e.target.value;
+    
+    // If the selected name exists in our payment data
+    if (clientPaymentData[selectedName]) {
+        const paymentData = clientPaymentData[selectedName];
+        console.log(`Client: ${selectedName}, Paid: ₹${paymentData.paid.toFixed(2)}, Pending: ₹${paymentData.pending.toFixed(2)}`);
+        
+        // You can optionally display this info somewhere on the page if needed
+        // For example, show a small tooltip or info box
+    }
+});
+
+// Prevent the payment info from being selected
+document.getElementById('clientName').addEventListener('keydown', function(e) {
+    if (e.key === 'Tab' || e.key === 'Enter') {
+        // Get the actual selected option text (just the name)
+        const input = e.target;
+        const datalist = document.getElementById('clientList');
+        const options = Array.from(datalist.options);
+        
+        // Find matching option
+        const matchingOption = options.find(opt => {
+            // Extract just the name from the option's innerHTML
+            const match = opt.innerHTML.match(/class="client-name">([^<]+)</);
+            return match && match[1] === input.value;
+        });
+        
+        if (matchingOption) {
+            // Set only the client name without the payment info
+            const match = matchingOption.innerHTML.match(/class="client-name">([^<]+)</);
+            if (match) {
+                input.value = match[1];
+            }
+        }
+    }
+});
+
+async function saveAndDownload(){
+ const items=[];
+ document.querySelectorAll("#billBody tr").forEach(r=>{
+   items.push({
+     srNo:r.cells[0].innerText,
+     productName:r.cells[1].querySelector("input").value,
+     unitPCS:+r.cells[2].querySelector("input").value||0,
+     qtyKGS:+r.cells[3].querySelector("input").value||0,
+     rate:+r.cells[4].querySelector("input").value||0,
+     amount:+r.querySelector(".amt").innerText||0
+   });
+ });
+
+ const data={
+   clientName:clientName.value,
+   mobile:mobile.value,
+   invoiceNo:invoiceNo.value,
+   invoiceDate:invoiceDate.value,
+   items,
+   subTotal:+subTotal.innerText,
+   roundOff:+roundOff.value||0,
+   grandTotal:+grandTotal.innerText
+ };
+
+ // ✅ Save to backend
+ const res=await fetch("http://localhost:5000/api/invoice",{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify(data)
+ });
+ const result=await res.json();
+
+ if(res.ok){
+   generatePDF(data);   // 👉 download PDF
+   alert(result.message||"Saved!");
+   loadTenantsWithPaymentInfo(); // Refresh the list
+ } else {
+   alert("Error saving invoice");
+ }
+}
+
+// ✅ UPDATED PDF generator to match demo-invoice.jpg format
+function generatePDF(data){
+ const { jsPDF } = window.jspdf;
+ const doc = new jsPDF();
+
+ doc.setFont("helvetica", "normal");
+
+ // ===== HEADER =====
+ doc.setFontSize(16);
+ doc.setFont("helvetica", "bold");
+ doc.text("ADESH ALUMINIUM", 105, 15, { align: "center" });
+
+ doc.setFontSize(11);
+ doc.setFont("helvetica", "normal");
+ doc.text("CHALLAN", 105, 22, { align: "center" });
+
+ // ===== CLIENT BOX =====
+ doc.rect(14, 28, 182, 18);
+ doc.line(120, 28, 120, 46);
+
+ doc.setFontSize(10);
+ doc.text(`M/s: ${data.clientName}`, 18, 35);
+ doc.text(`Mo: ${data.mobile}`, 18, 42);
+
+ doc.text(`Invoice No: ${data.invoiceNo}`, 125, 35);
+ doc.text(`Date: ${data.invoiceDate}`, 125, 42);
+
+ // ===== TABLE HEADER =====
+ let y = 52;
+ doc.rect(14, y, 182, 8);
+ doc.line(25, y, 25, y+8);
+ doc.line(90, y, 90, y+8);
+ doc.line(115, y, 115, y+8);
+ doc.line(140, y, 140, y+8);
+ doc.line(165, y, 165, y+8);
+
+ doc.setFont("helvetica", "bold");
+ doc.text("Sr", 18, y+5);
+ doc.text("Product", 35, y+5);
+ doc.text("Qty", 97, y+5);
+ doc.text("Unit", 122, y+5);
+ doc.text("Rate", 145, y+5);
+ doc.text("Amount", 168, y+5);
+
+ // ===== ITEMS =====
+ doc.setFont("helvetica", "normal");
+ y += 8;
+
+ data.items.forEach((item) => {
+   doc.rect(14, y, 182, 8);
+   doc.line(25, y, 25, y+8);
+   doc.line(90, y, 90, y+8);
+   doc.line(115, y, 115, y+8);
+   doc.line(140, y, 140, y+8);
+   doc.line(165, y, 165, y+8);
+
+   let qty = item.qtyKGS > 0 ? item.qtyKGS.toFixed(3) : item.unitPCS;
+   let unit = item.qtyKGS > 0 ? "KG" : "PCS";
+
+   doc.text(item.srNo, 18, y+5);
+   doc.text(item.productName || "", 28, y+5);
+   doc.text(String(qty), 98, y+5);
+   doc.text(unit, 123, y+5);
+   doc.text(item.rate.toFixed(2), 145, y+5);
+   doc.text(item.amount.toFixed(2), 168, y+5);
+
+   y += 8;
+ });
+
+ // ===== AMOUNT IN WORDS =====
+ y += 8;
+ doc.setFont("helvetica", "bold");
+ doc.text("Bill Amount:", 14, y);
+ doc.setFont("helvetica", "normal");
+ doc.text(numberToWords(data.grandTotal), 40, y);
+
+ // ===== TOTAL BOX =====
+ y += 8;
+ doc.rect(120, y-6, 76, 18);
+ doc.text("Round Off", 125, y);
+ doc.text("Grand Total", 125, y+8);
+
+ doc.text(data.roundOff.toFixed(2), 180, y, {align:"right"});
+ doc.text(data.grandTotal.toFixed(2), 180, y+8, {align:"right"});
+
+ // ===== SIGNATURE =====
+ y += 30;
+ doc.text("For, Adesh Aluminium", 14, y);
+ doc.line(140, y, 190, y);
+ doc.text("(Authorised Signature)", 145, y+6);
+
+ // ===== SAVE =====
+ doc.save(`Invoice_${data.invoiceNo}.pdf`);
+}
+
+window.onload = () => {
+    addRow();
+    loadTenantsWithPaymentInfo(); // Changed from loadTenants()
+    setTodayDate();
+};
+</script>
+
+</body>
+</html>

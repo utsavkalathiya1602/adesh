@@ -1,0 +1,549 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>All Clients</title>
+<style>
+    body { 
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+        background: #f8fafc;
+        padding: 24px;
+        margin: 0;
+        color: #334155;
+    }
+
+    .container {
+        background: #ffffff;
+        padding: 32px;
+        border-radius: 12px;
+        max-width: 600px;
+        margin: 0 auto;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2e8f0;
+    }
+
+    h2 {
+        color: #0f172a;
+        font-size: 28px;
+        font-weight: 600;
+        margin: 0 0 24px 0;
+        text-align: center;
+        letter-spacing: -0.5px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    li {
+        background: #f8fafc;
+        margin: 8px 0;
+        padding: 16px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+        font-size: 16px;
+        color: #334155;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    li:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    li::before {
+        content: "👤";
+        font-size: 18px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+        body {
+            padding: 16px;
+        }
+        
+        .container {
+            padding: 24px;
+        }
+        
+        h2 {
+            font-size: 24px;
+        }
+        
+        li {
+            padding: 14px 16px;
+            font-size: 15px;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>All Clients</h2>
+  <ul id="clientsList"></ul>
+</div>
+
+<script>
+async function loadClients() {
+  try {
+    const res = await fetch('http://localhost:5000/api/tenants');
+    const data = await res.json();
+
+    const ul = document.getElementById('clientsList');
+    ul.innerHTML = '';
+
+    if (data.length === 0) {
+      const li = document.createElement('li');
+      li.textContent = 'No clients found';
+      li.style.cursor = 'default';
+      li.style.color = '#64748b';
+      li.style.fontStyle = 'italic';
+      li.style.background = '#f1f5f9';
+      li.style.justifyContent = 'center';
+      li.innerHTML = '📭 No clients found';
+      ul.appendChild(li);
+      return;
+    }
+
+    data.forEach(client => {
+      const li = document.createElement('li');
+      li.textContent = client.name;
+
+      li.addEventListener('click', () => {
+        // Redirect to invoices page with client query param
+        window.location.href = `invoices.html?client=${encodeURIComponent(client.name)}`;
+      });
+
+      ul.appendChild(li);
+    });
+  } catch (error) {
+    console.error('Error loading clients:', error);
+    const ul = document.getElementById('clientsList');
+    const li = document.createElement('li');
+    li.textContent = 'Error loading clients';
+    li.style.cursor = 'default';
+    li.style.color = '#ef4444';
+    li.style.background = '#fef2f2';
+    li.style.border = '1px solid #fecaca';
+    li.style.justifyContent = 'center';
+    li.innerHTML = '❌ Error loading clients';
+    ul.appendChild(li);
+  }
+}
+
+window.onload = loadClients;
+</script>
+
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>All Clients</title>
+<style>
+    body { 
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+        background: #f8fafc;
+        padding: 24px;
+        margin: 0;
+        color: #334155;
+    }
+
+    .container {
+        background: #ffffff;
+        padding: 32px;
+        border-radius: 12px;
+        max-width: 1000px;
+        margin: 0 auto;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        border: 1px solid #e2e8f0;
+    }
+
+    h2 {
+        color: #0f172a;
+        font-size: 28px;
+        font-weight: 600;
+        margin: 0 0 24px 0;
+        text-align: center;
+        letter-spacing: -0.5px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .client-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        border-left: 4px solid #475569;
+    }
+
+    .stat-card.paid {
+        border-left-color: #16a34a;
+    }
+
+    .stat-card.pending {
+        border-left-color: #dc2626;
+    }
+
+    .stat-label {
+        font-size: 14px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 600;
+        color: #0f172a;
+        font-family: 'Courier New', monospace;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px;
+    }
+
+    thead {
+        background: #f1f5f9;
+    }
+
+    th {
+        padding: 14px 12px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 13px;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    tbody tr {
+        border-bottom: 1px solid #f1f5f9;
+        transition: background-color 0.2s ease;
+    }
+
+    tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    td {
+        padding: 14px 12px;
+        vertical-align: middle;
+    }
+
+    .client-name-cell {
+        font-weight: 500;
+        color: #334155;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .client-name-cell::before {
+        content: "👤";
+        font-size: 16px;
+    }
+
+    .amount-cell {
+        font-family: 'Courier New', monospace;
+        font-weight: 500;
+    }
+
+    .paid-amount {
+        color: #16a34a;
+    }
+
+    .pending-amount {
+        color: #dc2626;
+    }
+
+    .view-link {
+        color: #475569;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 14px;
+        padding: 6px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        background: #ffffff;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .view-link:hover {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+        text-decoration: none;
+    }
+
+    .view-link::after {
+        content: "→";
+        font-size: 14px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .client-stats {
+            grid-template-columns: 1fr;
+        }
+        
+        .container {
+            padding: 24px;
+        }
+    }
+
+    @media (max-width: 640px) {
+        body {
+            padding: 16px;
+        }
+        
+        h2 {
+            font-size: 24px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+        }
+        
+        td, th {
+            padding: 10px 8px;
+        }
+    }
+
+    .no-clients {
+        text-align: center;
+        padding: 40px 20px;
+        color: #64748b;
+        font-style: italic;
+        background: #f1f5f9;
+        border-radius: 8px;
+        border: 1px dashed #cbd5e1;
+    }
+
+    .no-clients::before {
+        content: "📭";
+        font-size: 32px;
+        display: block;
+        margin-bottom: 12px;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 40px 20px;
+        color: #64748b;
+    }
+
+    .loading::before {
+        content: "⏳";
+        font-size: 32px;
+        display: block;
+        margin-bottom: 12px;
+    }
+
+    .error {
+        text-align: center;
+        padding: 40px 20px;
+        color: #dc2626;
+        background: #fef2f2;
+        border-radius: 8px;
+        border: 1px solid #fecaca;
+    }
+
+    .error::before {
+        content: "❌";
+        font-size: 32px;
+        display: block;
+        margin-bottom: 12px;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>All Clients</h2>
+  
+  <div class="client-stats">
+    <div class="stat-card paid">
+      <div class="stat-label">Total Paid</div>
+      <div class="stat-value" id="totalPaid">₹0.00</div>
+    </div>
+    <div class="stat-card pending">
+      <div class="stat-label">Total Pending</div>
+      <div class="stat-value" id="totalPending">₹0.00</div>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Client Name</th>
+          <th>Total Invoices</th>
+          <th>Total Amount</th>
+          <th>Amount Paid</th>
+          <th>Pending Amount</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="clientsList">
+        <tr>
+          <td colspan="6" class="loading">Loading clients...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+async function loadClients() {
+  try {
+    const ul = document.getElementById('clientsList');
+    ul.innerHTML = '<tr><td colspan="6" class="loading">Loading clients...</td></tr>';
+
+    // First, get all clients/tenants
+    const tenantsRes = await fetch('http://localhost:5000/api/tenants');
+    const tenants = await tenantsRes.json();
+
+    if (!tenants || tenants.length === 0) {
+      ul.innerHTML = '<tr><td colspan="6" class="no-clients">No clients found</td></tr>';
+      updateTotals(0, 0);
+      return;
+    }
+
+    // For each client, get their invoices and calculate payment totals
+    const clientPromises = tenants.map(async (client) => {
+      try {
+        const invoicesRes = await fetch(`http://localhost:5000/api/search?q=${encodeURIComponent(client.name)}`);
+        const invoices = await invoicesRes.json();
+        
+        let totalInvoices = 0;
+        let totalAmount = 0;
+        let totalPaid = 0;
+        let totalPending = 0;
+        
+        if (invoices && invoices.length > 0) {
+          totalInvoices = invoices.length;
+          
+          invoices.forEach(inv => {
+            const grandTotal = parseFloat(inv.grand_total) || 0;
+            const paidAmount = parseFloat(inv.paid_amount) || 0;
+            
+            totalAmount += grandTotal;
+            totalPaid += paidAmount;
+            totalPending += (grandTotal - paidAmount);
+          });
+        }
+        
+        return {
+          name: client.name,
+          totalInvoices,
+          totalAmount,
+          totalPaid,
+          totalPending
+        };
+      } catch (error) {
+        console.error(`Error loading invoices for ${client.name}:`, error);
+        return {
+          name: client.name,
+          totalInvoices: 0,
+          totalAmount: 0,
+          totalPaid: 0,
+          totalPending: 0
+        };
+      }
+    });
+
+    const clientData = await Promise.all(clientPromises);
+    
+    // Calculate overall totals
+    let overallTotalPaid = 0;
+    let overallTotalPending = 0;
+    
+    clientData.forEach(client => {
+      overallTotalPaid += client.totalPaid;
+      overallTotalPending += client.totalPending;
+    });
+
+    // Update the table
+    ul.innerHTML = '';
+    
+    clientData.forEach(client => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div class="client-name-cell">${client.name}</div>
+        </td>
+        <td class="amount-cell">${client.totalInvoices}</td>
+        <td class="amount-cell">₹${client.totalAmount.toFixed(2)}</td>
+        <td class="amount-cell paid-amount">₹${client.totalPaid.toFixed(2)}</td>
+        <td class="amount-cell pending-amount">₹${client.totalPending.toFixed(2)}</td>
+        <td>
+          <a href="invoices.html?client=${encodeURIComponent(client.name)}" class="view-link">
+            View Invoices
+          </a>
+        </td>
+      `;
+      ul.appendChild(tr);
+    });
+
+    // Update total statistics
+    updateTotals(overallTotalPaid, overallTotalPending);
+
+  } catch (error) {
+    console.error('Error loading clients:', error);
+    const ul = document.getElementById('clientsList');
+    ul.innerHTML = `
+      <tr>
+        <td colspan="6" class="error">
+          Error loading clients<br>
+          <small style="color: #94a3b8; margin-top: 8px; display: block;">${error.message}</small>
+        </td>
+      </tr>
+    `;
+    updateTotals(0, 0);
+  }
+}
+
+function updateTotals(totalPaid, totalPending) {
+  document.getElementById('totalPaid').textContent = `₹${totalPaid.toFixed(2)}`;
+  document.getElementById('totalPending').textContent = `₹${totalPending.toFixed(2)}`;
+}
+
+window.onload = loadClients;
+</script>
+
+</body>
+</html>
