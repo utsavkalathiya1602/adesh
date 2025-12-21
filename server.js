@@ -210,19 +210,26 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const { Pool } = require("pg");
-
+const path = require("path");
 const app = express();
 app.use(express.json());
 app.use(cors());
 app.use(bodyParser.json());
 
+const isLocal = process.env.DATABASE_URL.includes("localhost") 
+             || process.env.DATABASE_URL.includes("127.0.0.1");
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL
-    ? { rejectUnauthorized: false }
-    : false,
+  ssl: isLocal ? false : { rejectUnauthorized: false },
 });
 
+// Serve static HTML files
+app.use(express.static(path.join(__dirname)));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
 
 // Helper to create safe table names
 function getTableName(name) {
