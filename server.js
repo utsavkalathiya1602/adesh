@@ -205,7 +205,7 @@
 
 
 
-
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -217,12 +217,12 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const pool = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "adeshtest",
-  password: "adesh",
-  port: 5432,
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL
+    ? { rejectUnauthorized: false }
+    : false,
 });
+
 
 // Helper to create safe table names
 function getTableName(name) {
@@ -510,6 +510,8 @@ app.get("/api/summary/:clientName", async (req, res) => {
   }
 });
 
-app.listen(5000, () =>
-  console.log("🚀 Server running on http://localhost:5000")
-);
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
