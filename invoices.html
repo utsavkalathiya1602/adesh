@@ -1,139 +1,3 @@
-<!-- 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Client Invoices</title>
-<style>
-body { font-family: Arial; background:#f4f4f4; margin:30px; }
-.container { background:#fff; padding:20px; border-radius:6px; max-width:1000px; margin:auto; }
-h2 { text-align:center; }
-table { width:100%; border-collapse:collapse; margin-top:15px; }
-th, td { border:1px solid #ccc; padding:8px; text-align:center; }
-input { width:70px; padding:4px; }
-button { padding:4px 8px; }
-button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
-tfoot td { font-weight: bold; background: #f0f0f0; }
-</style>
-</head>
-<body>
-
-<div class="container">
-  <h2 id="title">Invoices</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Client</th>
-        <th>Mobile</th>
-        <th>Invoice No</th>
-        <th>Date</th>
-        <th>Sub Total</th>
-        <th>Grand Total</th>
-        <th>Amount Paid</th>
-        <th>Pending Amount</th>
-        <th>Pay</th>
-      </tr>
-    </thead>
-    <tbody id="resultBody"></tbody>
-    <tfoot>
-      <tr>
-        <td colspan="7">Total</td>
-        <td id="totalPaid">0.00</td>
-        <td id="totalPending">0.00</td>
-        <td></td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
-
-<script>
-async function loadInvoices(clientName) {
-  const res = await fetch(`http://localhost:5000/api/search?q=${encodeURIComponent(clientName)}`);
-  const data = await res.json();
-
-  document.getElementById('title').textContent = `Invoices of ${clientName}`;
-
-  const tbody = document.getElementById('resultBody');
-  tbody.innerHTML = '';
-
-  let totalPaid = 0;
-  let totalPending = 0;
-
-  data.forEach(inv => {
-    const paid = parseFloat(inv.paid_amount || 0);
-    const pending = parseFloat(inv.grand_total - paid);
-    const isPaid = pending <= 0;
-
-    totalPaid += paid;
-    totalPending += pending;
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${inv.id}</td>
-      <td>${inv.client_name}</td>
-      <td>${inv.mobile}</td>
-      <td>${inv.invoice_no}</td>
-      <td>${inv.invoice_date}</td>
-      <td>${inv.sub_total}</td>
-      <td>${inv.grand_total}</td>
-      <td>${paid.toFixed(2)}</td>
-      <td>${pending.toFixed(2)}</td>
-      <td>
-        <input type="number" min="0" max="${pending.toFixed(2)}" placeholder="Amount"
-               id="pay_${inv.id}" ${isPaid ? "disabled" : ""}>
-        <button onclick="payInvoice('${clientName}', ${inv.id})"
-                ${isPaid ? "disabled" : ""}>Pay</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  document.getElementById('totalPaid').textContent = totalPaid.toFixed(2);
-  document.getElementById('totalPending').textContent = totalPending.toFixed(2);
-}
-
-async function payInvoice(clientName, invoiceId) {
-  const input = document.getElementById(`pay_${invoiceId}`);
-  const value = input.value.trim();
-
-  if (value === "") return;
-
-  const amountPaid = parseFloat(value);
-
-  if (isNaN(amountPaid) || amountPaid <= 0) {
-    alert("Enter a valid positive amount");
-    input.focus();
-    return;
-  }
-
-  const res = await fetch('http://localhost:5000/api/payment', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ clientName, invoiceId, amountPaid })
-  });
-
-  const data = await res.json();
-  alert(data.message);
-
-  loadInvoices(clientName);
-}
-
-// Get client name from URL
-const params = new URLSearchParams(window.location.search);
-const clientName = params.get('client');
-if (clientName) loadInvoices(clientName);
-</script>
-
-</body>
-</html> -->
-
-
-
-
-
-
-
 
 
 <!DOCTYPE html>
@@ -154,7 +18,7 @@ if (clientName) loadInvoices(clientName);
         background: #ffffff;
         padding: 32px;
         border-radius: 12px;
-        max-width: 1200px;
+        max-width: 1370px;
         margin: 0 auto;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         border: 1px solid #e2e8f0;
@@ -182,10 +46,10 @@ if (clientName) loadInvoices(clientName);
     }
 
     .table-container {
-        overflow-x: auto;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
         margin-bottom: 24px;
+        overflow-x: auto;
     }
 
     table {
@@ -311,9 +175,26 @@ if (clientName) loadInvoices(clientName);
         transform: translateY(-1px);
     }
 
-    .details-btn svg {
-        width: 14px;
-        height: 14px;
+    .payment-history-btn {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        margin-left: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .payment-history-btn:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
     }
 
     .paid-badge {
@@ -405,7 +286,7 @@ if (clientName) loadInvoices(clientName);
         background: white;
         border-radius: 12px;
         width: 90%;
-        max-width: 90%;
+        max-width: 1250px;
         max-height: 95vh;
         overflow-y: auto;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
@@ -545,6 +426,65 @@ if (clientName) loadInvoices(clientName);
         color: #0f172a;
     }
 
+    /* Payment History Styles */
+    .payment-history {
+        margin-top: 24px;
+    }
+
+    .payment-history h4 {
+        margin-bottom: 16px;
+        color: #475569;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .payment-history-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+    }
+
+    .payment-history-table th {
+        background: #f1f5f9;
+        padding: 12px;
+        font-size: 12px;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .payment-history-table td {
+        padding: 12px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 14px;
+    }
+
+    .payment-history-table .amount {
+        font-family: 'Courier New', monospace;
+        font-weight: 500;
+    }
+
+    .payment-history-table .positive {
+        color: #16a34a;
+        font-weight: 600;
+    }
+
+    .payment-history-table .negative {
+        color: #dc2626;
+        font-weight: 600;
+    }
+
+    .no-payments {
+        text-align: center;
+        padding: 32px;
+        color: #64748b;
+        font-style: italic;
+        background: #f1f5f9;
+        border-radius: 8px;
+        border: 1px dashed #cbd5e1;
+    }
+
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .footer-totals {
@@ -655,6 +595,41 @@ if (clientName) loadInvoices(clientName);
         content: "←";
         font-size: 16px;
     }
+
+    .tabs {
+        display: flex;
+        border-bottom: 1px solid #e2e8f0;
+        margin-bottom: 24px;
+    }
+
+    .tab-btn {
+        padding: 12px 24px;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: #64748b;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+        color: #475569;
+        border-bottom-color: #475569;
+    }
+
+    .tab-btn:hover:not(.active) {
+        color: #334155;
+        background: #f8fafc;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
 </style>
 </head>
 <body>
@@ -667,42 +642,60 @@ if (clientName) loadInvoices(clientName);
         <div class="client-name" id="clientName"></div>
     </div>
 
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Client</th>
-                    <th>Mobile</th>
-                    <th>Invoice No</th>
-                    <th>Date</th>
-                    <th>Sub Total</th>
-                    <th>Grand Total</th>
-                    <th>Amount Paid</th>
-                    <th>Pending Amount</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody id="resultBody">
-                <tr>
-                    <td colspan="10" class="loading">Loading invoices...</td>
-                </tr>
-            </tbody>
-        </table>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('invoices')">Invoices</button>
+        <!-- <button class="tab-btn" onclick="showTab('history')">Payment History</button> -->
     </div>
 
-    <div class="footer-totals">
-        <div class="footer-card paid">
-            <div class="footer-label">Total Paid</div>
-            <div class="footer-value" id="totalPaid">₹0.00</div>
+    <!-- Invoices Tab -->
+    <div id="invoicesTab" class="tab-content active">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Client</th>
+                        <th>Mobile</th>
+                        <th>Invoice No</th>
+                        <th>Date</th>
+                        <th>Sub Total</th>
+                        <th>Grand Total</th>
+                        <th>Amount Paid</th>
+                        <th>Pending Amount</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="resultBody">
+                    <tr>
+                        <td colspan="10" class="loading">Loading invoices...</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-        <div class="footer-card pending">
-            <div class="footer-label">Total Pending</div>
-            <div class="footer-value" id="totalPending">₹0.00</div>
+
+        <div class="footer-totals">
+            <div class="footer-card paid">
+                <div class="footer-label">Total Paid</div>
+                <div class="footer-value" id="totalPaid">₹0.00</div>
+            </div>
+            <div class="footer-card pending">
+                <div class="footer-label">Total Pending</div>
+                <div class="footer-value" id="totalPending">₹0.00</div>
+            </div>
+            <div class="footer-card total">
+                <div class="footer-label">Grand Total</div>
+                <div class="footer-value" id="totalGrandTotal">₹0.00</div>
+            </div>
         </div>
-        <div class="footer-card total">
-            <div class="footer-label">Grand Total</div>
-            <div class="footer-value" id="totalGrandTotal">₹0.00</div>
+    </div>
+
+    <!-- Payment History Tab -->
+    <div id="historyTab" class="tab-content">
+        <div class="payment-history">
+            <h4>Payment History for <span id="historyClientName"></span></h4>
+            <div id="paymentHistoryContent">
+                <div class="loading">Loading payment history...</div>
+            </div>
         </div>
     </div>
 </div>
@@ -720,12 +713,48 @@ if (clientName) loadInvoices(clientName);
     </div>
 </div>
 
+<!-- Modal for Payment History -->
+<div id="paymentHistoryModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Payment History</h3>
+            <button class="close-btn" onclick="closePaymentHistoryModal()">×</button>
+        </div>
+        <div class="modal-body" id="paymentHistoryModalBody">
+            <!-- Payment history will be loaded here -->
+        </div>
+    </div>
+</div>
+
 <script>
-// Store invoice data globally for access
+// Global variables
 let allInvoicesData = [];
+let currentClientName = '';
+let paymentHistoryData = [];
+
+// Tab functionality
+function showTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`.tab-btn[onclick*="${tabName}"]`).classList.add('active');
+    
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.getElementById(`${tabName}Tab`).classList.add('active');
+    
+    // Load payment history if needed
+    if (tabName === 'history' && currentClientName) {
+        loadPaymentHistory(currentClientName);
+    }
+}
 
 async function loadInvoices(clientName) {
     try {
+        currentClientName = clientName;
         const tbody = document.getElementById('resultBody');
         tbody.innerHTML = '<tr><td colspan="10" class="loading">Loading invoices...</td></tr>';
         
@@ -739,6 +768,7 @@ async function loadInvoices(clientName) {
 
         document.getElementById('title').textContent = `Invoices`;
         document.getElementById('clientName').textContent = clientName;
+        document.getElementById('historyClientName').textContent = clientName;
 
         tbody.innerHTML = '';
 
@@ -793,6 +823,12 @@ async function loadInvoices(clientName) {
                             </svg>
                             Details
                         </button>
+                        <button class="payment-history-btn" onclick="viewPaymentHistory('${clientName}', ${inv.id}, '${inv.invoice_no}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                            </svg>
+                            Payments
+                        </button>
                     </div>
                 </td>
             `;
@@ -820,12 +856,10 @@ async function loadInvoices(clientName) {
 // Function to view invoice details
 async function viewInvoiceDetails(invoiceId) {
     try {
-        // Find the invoice in our stored data
         const invoice = allInvoicesData.find(inv => inv.id == invoiceId);
         
         if (!invoice) {
-            // If not found in stored data, fetch it from API
-            const res = await fetch(`http://localhost:5000/api/invoice/${invoiceId}`);
+            const res = await fetch(`http://localhost:5000/api/invoice/${currentClientName}/${invoiceId}`);
             if (!res.ok) throw new Error('Failed to fetch invoice details');
             const data = await res.json();
             showInvoiceDetails(data);
@@ -842,12 +876,10 @@ async function viewInvoiceDetails(invoiceId) {
 async function showInvoiceDetails(invoice) {
     const modalBody = document.getElementById('modalBody');
     
-    // Show loading state
     modalBody.innerHTML = '<div class="loading">Loading invoice details...</div>';
     
     try {
-        // Fetch detailed invoice data from the new API endpoint
-        const response = await fetch(`http://localhost:5000/api/invoice/${invoice.client_name}/${invoice.id}`);
+        const response = await fetch(`http://localhost:5000/api/invoice/${currentClientName}/${invoice.id}`);
         
         if (!response.ok) {
             throw new Error(`Failed to fetch invoice details: ${response.status}`);
@@ -855,7 +887,6 @@ async function showInvoiceDetails(invoice) {
         
         const detailedInvoice = await response.json();
         
-        // Now parse items from the detailed response
         let items = [];
         try {
             if (detailedInvoice.items && typeof detailedInvoice.items === 'string') {
@@ -966,8 +997,307 @@ async function showInvoiceDetails(invoice) {
         `;
     }
     
-    // Show modal
     document.getElementById('invoiceModal').style.display = 'flex';
+}
+
+// Function to view payment history for a specific invoice
+async function viewPaymentHistory(clientName, invoiceId, invoiceNo) {
+    try {
+        const modalBody = document.getElementById('paymentHistoryModalBody');
+        modalBody.innerHTML = '<div class="loading">Loading payment history...</div>';
+        
+        const response = await fetch(`http://localhost:5000/api/payments/${clientName}/${invoiceId}`);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch payment history: ${response.status}`);
+        }
+        
+        const payments = await response.json();
+        
+        if (payments.length === 0) {
+            modalBody.innerHTML = `
+                <div class="no-payments">
+                    <div style="font-size: 32px; margin-bottom: 12px;">💰</div>
+                    No payment records found for this invoice
+                </div>
+            `;
+        } else {
+            // Calculate totals
+            let totalPaid = 0;
+            payments.forEach(payment => {
+                totalPaid += parseFloat(payment.payment_amount);
+            });
+            
+            modalBody.innerHTML = `
+                <div class="payment-details">
+                    <div style="margin-bottom: 20px; padding: 16px; background: #f8fafc; border-radius: 8px;">
+                        <h4 style="margin: 0 0 8px 0; color: #475569;">Invoice: ${invoiceNo}</h4>
+                        <div style="color: #64748b; font-size: 14px;">Total Payments: <strong style="color: #16a34a;">₹${totalPaid.toFixed(2)}</strong></div>
+                    </div>
+                    
+                    <h4 style="margin-bottom: 16px; color: #475569;">Payment Records</h4>
+                    <table class="payment-history-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Invoice No</th>
+                                <th>Payment Amount</th>
+                                <th>Remaining Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${payments.map(payment => `
+                                <tr>
+                                    <td>${payment.formatted_date}</td>
+                                    <td>${payment.invoice_no}</td>
+                                    <td class="amount positive">+₹${parseFloat(payment.payment_amount).toFixed(2)}</td>
+                                    <td class="amount ${parseFloat(payment.remaining_balance) > 0 ? 'negative' : 'positive'}">
+                                        ₹${parseFloat(payment.remaining_balance).toFixed(2)}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        
+        document.getElementById('paymentHistoryModal').style.display = 'flex';
+        
+    } catch (error) {
+        console.error('Error loading payment history:', error);
+        modalBody.innerHTML = `
+            <div class="error-state">
+                <p style="color: #dc2626; margin-bottom: 10px;">❌ Error loading payment history</p>
+                <p style="color: #64748b; font-size: 14px;">${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Function to load payment history for the client (for tab view)
+// Function to load payment history for the client (for tab view)
+async function loadPaymentHistory(clientName) {
+  try {
+    const content = document.getElementById('paymentHistoryContent');
+    content.innerHTML = '<div class="loading">Loading payment history...</div>';
+    
+    // Use the new endpoint to get ALL payment history for this client
+    const response = await fetch(`http://localhost:5000/api/payments/${clientName}`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch payment history: ${response.status}`);
+    }
+    
+    const allPayments = await response.json();
+    
+    if (allPayments.length === 0) {
+      content.innerHTML = `
+        <div class="no-payments">
+          <div style="font-size: 32px; margin-bottom: 12px;">💰</div>
+          No payment records found for this client
+        </div>
+      `;
+    } else {
+      // Sort by date descending
+      allPayments.sort((a, b) => new Date(b.payment_date) - new Date(a.payment_date));
+      
+      // Calculate total paid
+      let totalPaid = 0;
+      allPayments.forEach(payment => {
+        totalPaid += parseFloat(payment.payment_amount || 0);
+      });
+      
+      // Group payments by invoice for better organization
+      const paymentsByInvoice = {};
+      allPayments.forEach(payment => {
+        if (!paymentsByInvoice[payment.invoice_no]) {
+          paymentsByInvoice[payment.invoice_no] = [];
+        }
+        paymentsByInvoice[payment.invoice_no].push(payment);
+      });
+      
+      content.innerHTML = `
+        <div style="margin-bottom: 20px; padding: 16px; background: #f8fafc; border-radius: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Total Payments</div>
+              <div style="font-size: 24px; font-weight: 600; color: #16a34a;">₹${totalPaid.toFixed(2)}</div>
+            </div>
+            <div style="color: #64748b; font-size: 14px;">
+              ${allPayments.length} payment record${allPayments.length !== 1 ? 's' : ''} across ${Object.keys(paymentsByInvoice).length} invoice${Object.keys(paymentsByInvoice).length !== 1 ? 's' : ''}
+            </div>
+          </div>
+        </div>
+        
+        ${Object.entries(paymentsByInvoice).map(([invoiceNo, payments]) => {
+          const invoiceTotal = payments.reduce((sum, p) => sum + parseFloat(p.payment_amount), 0);
+          const lastPayment = payments[0]; // Most recent payment
+          
+          return `
+            <div style="margin-bottom: 24px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+              <div style="background: #f1f5f9; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <strong style="color: #475569;">Invoice: ${invoiceNo}</strong>
+                    <div style="color: #64748b; font-size: 12px; margin-top: 2px;">
+                      Invoice ID: ${payments[0].invoice_id}
+                    </div>
+                  </div>
+                  <div style="text-align: right;">
+                    <div style="color: #64748b; font-size: 12px;">Total Paid</div>
+                    <div style="color: #16a34a; font-weight: 600;">₹${invoiceTotal.toFixed(2)}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <table class="payment-history-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Payment Amount</th>
+                    <th>Remaining Balance</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${payments.map(payment => `
+                    <tr>
+                      <td>${payment.formatted_date}</td>
+                      <td class="amount positive">
+                        <div style="font-weight: 600; color: #16a34a;">+₹${parseFloat(payment.payment_amount).toFixed(2)}</div>
+                        <div style="font-size: 11px; color: #94a3b8;">Payment ID: ${payment.id}</div>
+                      </td>
+                      <td class="amount ${parseFloat(payment.remaining_balance) > 0 ? 'negative' : 'positive'}">
+                        ₹${parseFloat(payment.remaining_balance).toFixed(2)}
+                      </td>
+                      <td>
+                        <button onclick="viewPaymentDetails('${clientName}', ${payment.invoice_id}, ${payment.id})" 
+                                style="padding: 4px 8px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 11px; cursor: pointer;">
+                          Details
+                        </button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }).join('')}
+      `;
+    }
+    
+  } catch (error) {
+    console.error('Error loading payment history:', error);
+    content.innerHTML = `
+      <div style="text-align: center; padding: 40px 20px; color: #dc2626; background: #fef2f2; border-radius: 8px;">
+        <div style="font-size: 32px; margin-bottom: 12px;">❌</div>
+        Error loading payment history<br>
+        <small style="color: #94a3b8; margin-top: 8px; display: block;">${error.message}</small>
+        <button onclick="loadPaymentHistory('${clientName}')" 
+                style="margin-top: 15px; padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+          Retry
+        </button>
+      </div>
+    `;
+  }
+}
+
+// Add this function to view individual payment details
+async function viewPaymentDetails(clientName, invoiceId, paymentId) {
+  try {
+    const modalBody = document.getElementById('paymentHistoryModalBody');
+    modalBody.innerHTML = '<div class="loading">Loading payment details...</div>';
+    
+    // Get all payments for this invoice
+    const response = await fetch(`http://localhost:5000/api/payments/${clientName}/${invoiceId}`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch payment details: ${response.status}`);
+    }
+    
+    const payments = await response.json();
+    const payment = payments.find(p => p.id == paymentId);
+    
+    if (!payment) {
+      modalBody.innerHTML = `
+        <div class="no-payments">
+          <div style="font-size: 32px; margin-bottom: 12px;">🔍</div>
+          Payment record not found
+        </div>
+      `;
+    } else {
+      modalBody.innerHTML = `
+        <div class="payment-details">
+          <div style="margin-bottom: 24px; padding: 20px; background: #f8fafc; border-radius: 8px;">
+            <h4 style="margin: 0 0 12px 0; color: #475569;">Payment Details</h4>
+            <div class="invoice-details-grid" style="grid-template-columns: repeat(2, 1fr);">
+              <div class="detail-item">
+                <span class="detail-label">Payment ID</span>
+                <span class="detail-value">${payment.id}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Date</span>
+                <span class="detail-value">${payment.payment_date}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Invoice No</span>
+                <span class="detail-value">${payment.invoice_no}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Invoice ID</span>
+                <span class="detail-value">${payment.invoice_id}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
+            <div style="background: #dcfce7; padding: 16px; border-radius: 8px; text-align: center;">
+              <div style="color: #166534; font-size: 12px; margin-bottom: 4px;">Payment Amount</div>
+              <div style="color: #16a34a; font-size: 24px; font-weight: 700;">₹${parseFloat(payment.payment_amount).toFixed(2)}</div>
+            </div>
+            <div style="background: ${parseFloat(payment.remaining_balance) > 0 ? '#fef2f2' : '#dcfce7'}; padding: 16px; border-radius: 8px; text-align: center;">
+              <div style="color: ${parseFloat(payment.remaining_balance) > 0 ? '#991b1b' : '#166534'}; font-size: 12px; margin-bottom: 4px;">Remaining Balance</div>
+              <div style="color: ${parseFloat(payment.remaining_balance) > 0 ? '#dc2626' : '#16a34a'}; font-size: 24px; font-weight: 700;">₹${parseFloat(payment.remaining_balance).toFixed(2)}</div>
+            </div>
+          </div>
+          
+          <div style="background: #f8fafc; padding: 16px; border-radius: 8px; border-left: 4px solid #475569;">
+            <h4 style="margin: 0 0 12px 0; color: #475569; font-size: 16px;">All Payments for Invoice ${payment.invoice_no}</h4>
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th style="padding: 8px; text-align: left; font-size: 12px; color: #64748b; background: #f1f5f9;">Date</th>
+                  <th style="padding: 8px; text-align: left; font-size: 12px; color: #64748b; background: #f1f5f9;">Amount</th>
+                  <th style="padding: 8px; text-align: left; font-size: 12px; color: #64748b; background: #f1f5f9;">Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${payments.map(p => `
+                  <tr style="${p.id == paymentId ? 'background: #f0f9ff;' : ''}">
+                    <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${p.formatted_date}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; color: #16a34a; font-weight: ${p.id == paymentId ? '700' : '500'};">₹${parseFloat(p.payment_amount).toFixed(2)}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; color: ${parseFloat(p.remaining_balance) > 0 ? '#dc2626' : '#16a34a'};">₹${parseFloat(p.remaining_balance).toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+    
+    document.getElementById('paymentHistoryModal').style.display = 'flex';
+    
+  } catch (error) {
+    console.error('Error loading payment details:', error);
+    modalBody.innerHTML = `
+      <div class="error-state">
+        <p style="color: #dc2626; margin-bottom: 10px;">❌ Error loading payment details</p>
+        <p style="color: #64748b; font-size: 14px;">${error.message}</p>
+      </div>
+    `;
+  }
 }
 
 function updateTotals(totalPaid, totalPending, totalGrandTotal) {
@@ -976,78 +1306,98 @@ function updateTotals(totalPaid, totalPending, totalGrandTotal) {
     document.getElementById('totalGrandTotal').textContent = `₹${totalGrandTotal.toFixed(2)}`;
 }
 
-// Function to close modal
+// Function to close invoice modal
 function closeModal() {
     document.getElementById('invoiceModal').style.display = 'none';
 }
 
-// Close modal when clicking outside
+// Function to close payment history modal
+function closePaymentHistoryModal() {
+    document.getElementById('paymentHistoryModal').style.display = 'none';
+}
+
+// Close modals when clicking outside
 document.getElementById('invoiceModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeModal();
     }
 });
 
-// Close modal with Escape key
+document.getElementById('paymentHistoryModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closePaymentHistoryModal();
+    }
+});
+
+// Close modals with Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeModal();
+        closePaymentHistoryModal();
     }
 });
 
 async function payInvoice(clientName, invoiceId) {
-    const input = document.getElementById(`pay_${invoiceId}`);
-    const value = input.value.trim();
+  const input = document.getElementById(`pay_${invoiceId}`);
+  const value = input.value.trim();
 
-    if (value === "") {
-        alert("Please enter an amount");
-        input.focus();
-        return;
+  if (value === "") {
+    alert("Please enter an amount");
+    input.focus();
+    return;
+  }
+
+  const amountPaid = parseFloat(value);
+  const row = input.closest('tr');
+  const pendingElement = row.querySelector('.pending-cell');
+  const pendingText = pendingElement.textContent.replace('₹', '');
+  const pendingAmount = parseFloat(pendingText);
+
+  if (isNaN(amountPaid) || amountPaid <= 0) {
+    alert("Please enter a valid positive amount");
+    input.focus();
+    return;
+  }
+
+  if (amountPaid > pendingAmount) {
+    alert(`Amount cannot exceed pending amount of ₹${pendingAmount.toFixed(2)}`);
+    input.focus();
+    return;
+  }
+
+  try {
+    const res = await fetch('http://localhost:5000/api/payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        clientName: clientName, 
+        invoiceId: invoiceId, 
+        amountPaid: amountPaid 
+      })
+    });
+
+    const data = await res.json();
+    
+    if (res.ok) {
+      alert(data.message || "Payment recorded successfully!");
+      
+      // Clear the input field
+      input.value = '';
+      
+      // Reload invoices
+      loadInvoices(clientName);
+      
+      // Always reload payment history tab when payment is made
+      loadPaymentHistory(clientName);
+      
+    } else {
+      alert(data.message || "Error recording payment");
     }
-
-    const amountPaid = parseFloat(value);
-    const row = input.closest('tr');
-    const pendingElement = row.querySelector('.pending-cell');
-    const pendingText = pendingElement.textContent.replace('₹', '');
-    const pendingAmount = parseFloat(pendingText);
-
-    if (isNaN(amountPaid) || amountPaid <= 0) {
-        alert("Please enter a valid positive amount");
-        input.focus();
-        return;
-    }
-
-    if (amountPaid > pendingAmount) {
-        alert(`Amount cannot exceed pending amount of ₹${pendingAmount.toFixed(2)}`);
-        input.focus();
-        return;
-    }
-
-    try {
-        const res = await fetch('http://localhost:5000/api/payment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                clientName: clientName, 
-                invoiceId: invoiceId, 
-                amountPaid: amountPaid 
-            })
-        });
-
-        const data = await res.json();
-        
-        if (res.ok) {
-            alert(data.message || "Payment recorded successfully!");
-            loadInvoices(clientName);
-        } else {
-            alert(data.message || "Error recording payment");
-        }
-    } catch (error) {
-        console.error('Error recording payment:', error);
-        alert("Network error. Please try again.");
-    }
+  } catch (error) {
+    console.error('Error recording payment:', error);
+    alert("Network error. Please try again.");
+  }
 }
-
 // Get client name from URL
 const params = new URLSearchParams(window.location.search);
 const clientName = params.get('client');
