@@ -1820,7 +1820,7 @@ window.onload = () => {
         
         <div class="form-group">
             <label for="mobile">Mobile Number</label>
-            <input id="mobile" value="9979698983" type="tel" pattern="[0-9]{10}" maxlength="10" placeholder="10 digit mobile" required>
+            <input id="mobile" type="tel" pattern="[0-9]{10}" maxlength="10" placeholder="10 digit mobile" required>
         </div>
         
         <div class="form-group">
@@ -1955,7 +1955,7 @@ function numberToWords(num) {
     return str.trim() + ' Only';
 }
 
-// Function to get client payment data
+// Function to get client payment data and mobile number
 async function getClientPaymentData(clientName) {
     try {
         const invoicesRes = await fetch(`http://localhost:5000/api/search?q=${encodeURIComponent(clientName)}`);
@@ -1963,6 +1963,7 @@ async function getClientPaymentData(clientName) {
         
         let totalPaid = 0;
         let totalPending = 0;
+        let mobileNumber = "9979698983"; // Default value
         
         if (invoices && invoices.length > 0) {
             invoices.forEach(inv => {
@@ -1971,18 +1972,25 @@ async function getClientPaymentData(clientName) {
                 
                 totalPaid += paidAmount;
                 totalPending += (grandTotal - paidAmount);
+                
+                // Get mobile number from the most recent invoice
+                if (inv.mobile && inv.mobile !== "" && inv.mobile !== "null") {
+                    mobileNumber = inv.mobile;
+                }
             });
         }
         
         return {
             paid: totalPaid,
-            pending: totalPending
+            pending: totalPending,
+            mobile: mobileNumber
         };
     } catch (error) {
         console.error(`Error loading payment data for ${clientName}:`, error);
         return {
             paid: 0,
-            pending: 0
+            pending: 0,
+            mobile: "9979698983"
         };
     }
 }
@@ -2007,6 +2015,7 @@ async function loadTenantsWithPaymentInfo() {
             opt.value = client.name;
             opt.dataset.pending = paymentData.pending;
             opt.dataset.paid = paymentData.paid;
+            opt.dataset.mobile = paymentData.mobile; // Store mobile in dataset
             
             // Add class if there's pending amount
             if (paymentData.pending > 0) {
@@ -2019,6 +2028,7 @@ async function loadTenantsWithPaymentInfo() {
                     <div class="client-stats">
                         <span class="paid-stat">Paid: ₹${paymentData.paid.toFixed(2)}</span>
                         <span class="pending-stat">Pending: ₹${paymentData.pending.toFixed(2)}</span>
+                        <span class="mobile-stat" style="color: #3b82f6; font-weight: 500;">${paymentData.mobile}</span>
                     </div>
                 </div>
             `;
@@ -2039,10 +2049,11 @@ async function loadTenantsWithPaymentInfo() {
 }
 
 // Event listener for when client name is selected
-document.getElementById('clientName').addEventListener('input', function(e) {
+document.getElementById('clientName').addEventListener('input', async function(e) {
     const selectedName = e.target.value;
     const pendingInfoBox = document.getElementById('pendingInfoBox');
     const pendingAmountDisplay = document.getElementById('pendingAmountDisplay');
+    const mobileInput = document.getElementById('mobile');
     
     // Find the option with this client name
     const options = Array.from(document.getElementById('clientList').options);
@@ -2051,9 +2062,19 @@ document.getElementById('clientName').addEventListener('input', function(e) {
         return match && match[1] === selectedName;
     });
     
-    if (matchingOption && matchingOption.dataset.pending > 0) {
-        pendingInfoBox.classList.add('show');
-        pendingAmountDisplay.textContent = `₹${parseFloat(matchingOption.dataset.pending).toFixed(2)}`;
+    if (matchingOption) {
+        // Show pending info if exists
+        if (matchingOption.dataset.pending > 0) {
+            pendingInfoBox.classList.add('show');
+            pendingAmountDisplay.textContent = `₹${parseFloat(matchingOption.dataset.pending).toFixed(2)}`;
+        } else {
+            pendingInfoBox.classList.remove('show');
+        }
+        
+        // Auto-fill mobile number from dataset
+        if (matchingOption.dataset.mobile && matchingOption.dataset.mobile !== "null") {
+            mobileInput.value = matchingOption.dataset.mobile;
+        }
     } else {
         pendingInfoBox.classList.remove('show');
     }
@@ -2085,6 +2106,12 @@ document.getElementById('clientName').addEventListener('keydown', function(e) {
             const match = matchingOption.innerHTML.match(/class="client-name">([^<]+)</);
             if (match) {
                 input.value = match[1];
+                
+                // Auto-fill mobile number
+                const mobileInput = document.getElementById('mobile');
+                if (matchingOption.dataset.mobile && matchingOption.dataset.mobile !== "null") {
+                    mobileInput.value = matchingOption.dataset.mobile;
+                }
             }
         }
     }
@@ -2183,8 +2210,6 @@ function generatePDF(data){
    doc.setFont("helvetica", "normal");
    doc.setFontSize(8);
    doc.text(`Previous Pending Amount: ₹${data.paymentSummary.totalPending.toFixed(2)}`, 14, paymentY + 4);
-//    doc.text(`Total Invoices: ${data.paymentSummary.totalInvoices}`, 14, paymentY + 8);
-//    doc.text(`Total Paid: ₹${data.paymentSummary.totalPaid.toFixed(2)}`, 14, paymentY + 12);
    
    // Draw a box around payment status
    doc.rect(12, paymentY - 5, 184, 20);
@@ -2298,12 +2323,36 @@ function generatePDF(data){
  doc.save(`Invoice_${data.invoiceNo}_${data.clientName}.pdf`);
 }
 
+// Add event listener for mobile input blur to update mobile in dropdown
+document.getElementById('mobile').addEventListener('blur', function(e) {
+    const clientName = document.getElementById('clientName').value;
+    if (clientName && clientPaymentData[clientName]) {
+        // Update the mobile number in our local data
+        clientPaymentData[clientName].mobile = e.target.value;
+        
+        // Update the datalist option with new mobile
+        const options = Array.from(document.getElementById('clientList').options);
+        const matchingOption = options.find(opt => {
+            const match = opt.innerHTML.match(/class="client-name">([^<]+)</);
+            return match && match[1] === clientName;
+        });
+        
+        if (matchingOption) {
+            matchingOption.dataset.mobile = e.target.value;
+            // Update the displayed mobile in dropdown
+            const mobileStat = matchingOption.querySelector('.mobile-stat');
+            if (mobileStat) {
+                mobileStat.textContent = e.target.value;
+            }
+        }
+    }
+});
+
 window.onload = () => {
     addRow();
     loadTenantsWithPaymentInfo(); // Changed from loadTenants()
     setTodayDate();
 };
 </script>
-
 </body>
 </html>
