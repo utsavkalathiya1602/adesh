@@ -1179,8 +1179,8 @@ app.use(express.json());
 app.use(cors());
 app.use(bodyParser.json());
 
-const isLocal = process.env.DATABASE_URL.includes("localhost") 
-             || process.env.DATABASE_URL.includes("127.0.0.1");
+// const isLocal = process.env.DATABASE_URL.includes("localhost") 
+//              || process.env.DATABASE_URL.includes("127.0.0.1");
 
 // const pool = new Pool({
 //   connectionString: process.env.DATABASE_URL,
@@ -1195,9 +1195,6 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: 13399,
-  max: 20, // Max clients in the pool
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
 });
 
 
