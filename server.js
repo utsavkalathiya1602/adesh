@@ -1187,10 +1187,18 @@ const pool = new Pool({
 });
 
 // Serve static HTML files
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(__dirname));
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
+});
+
+app.get("/clients", (req, res) => {
+  res.sendFile(path.join(__dirname, "clients.html"));
+});
+
+app.get("/invoices", (req, res) => {
+  res.sendFile(path.join(__dirname, "invoices.html"));
 });
 
 // Helper to create safe table names
