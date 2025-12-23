@@ -1894,11 +1894,86 @@ window.onload = () => {
 <script>
 // Store client payment data
 let clientPaymentData = {};
+let currentInvoiceNumber = null;
 
-//for date
+// For date
 function setTodayDate() {
   const today = new Date().toISOString().split("T")[0];
   document.getElementById("invoiceDate").value = today;
+}
+
+// Function to get the current/last invoice number from database (without incrementing)
+async function getCurrentInvoiceNumber() {
+    try {
+        // Call backend to get current invoice number (not next)
+        const response = await fetch('http://localhost:5000/api/invoice/current-number');
+        const data = await response.json();
+        
+        if (data.invoiceNumber) {
+            return data.invoiceNumber;
+        } else {
+            // Fallback to current month and 001
+            const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            const currentMonth = monthNames[new Date().getMonth()];
+            return `${currentMonth}/001`;
+        }
+    } catch (error) {
+        console.error('Error getting current invoice number:', error);
+        // Fallback to current month and 001
+        const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+        const currentMonth = monthNames[new Date().getMonth()];
+        return `${currentMonth}/001`;
+    }
+}
+
+// Function to get the NEXT invoice number (only when saving)
+async function getNextInvoiceNumber() {
+    try {
+        // Call backend to get next invoice number
+        const response = await fetch('http://localhost:5000/api/invoice/next-number');
+        const data = await response.json();
+        
+        if (data.success) {
+            return data.invoiceNumber;
+        } else {
+            // Fallback: increment current number
+            return incrementInvoiceNumber(currentInvoiceNumber);
+        }
+    } catch (error) {
+        console.error('Error getting next invoice number:', error);
+        // Fallback: increment current number
+        return incrementInvoiceNumber(currentInvoiceNumber);
+    }
+}
+
+// Function to increment invoice number locally
+function incrementInvoiceNumber(invoiceNo) {
+    if (!invoiceNo) {
+        const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+        const currentMonth = monthNames[new Date().getMonth()];
+        return `${currentMonth}/001`;
+    }
+    
+    const parts = invoiceNo.split('/');
+    if (parts.length === 2) {
+        const month = parts[0];
+        const number = parseInt(parts[1]);
+        const nextNumber = number + 1;
+        return `${month}/${nextNumber.toString().padStart(3, '0')}`;
+    }
+    
+    return invoiceNo;
+}
+
+// Function to update the invoice number field with current number
+async function setCurrentInvoiceNumber() {
+    try {
+        currentInvoiceNumber = await getCurrentInvoiceNumber();
+        document.getElementById('invoiceNo').value = currentInvoiceNumber;
+        console.log("Current invoice number set to:", currentInvoiceNumber);
+    } catch (error) {
+        console.error("Failed to set invoice number:", error);
+    }
 }
 
 function addRow(){
@@ -2118,209 +2193,279 @@ document.getElementById('clientName').addEventListener('keydown', function(e) {
 });
 
 async function saveAndDownload(){
- const items=[];
- document.querySelectorAll("#billBody tr").forEach(r=>{
-   items.push({
-     srNo:r.cells[0].innerText,
-     productName:r.cells[1].querySelector("input").value,
-     unitPCS:+r.cells[2].querySelector("input").value||0,
-     qtyKGS:+r.cells[3].querySelector("input").value||0,
-     rate:+r.cells[4].querySelector("input").value||0,
-     amount:+r.querySelector(".amt").innerText||0
-   });
- });
+    // Validate client name
+    const clientNameValue = document.getElementById('clientName').value;
+    if (!clientNameValue || clientNameValue.trim() === '') {
+        alert('Please enter client name');
+        document.getElementById('clientName').focus();
+        return;
+    }
+    
+    // Validate at least one item has non-zero amount
+    let hasValidItem = false;
+    document.querySelectorAll("#billBody tr").forEach(r=>{
+        const pcs=+r.cells[2].querySelector("input").value||0;
+        const kgs=+r.cells[3].querySelector("input").value||0;
+        const rate=+r.cells[4].querySelector("input").value||0;
+        if ((pcs > 0 || kgs > 0) && rate > 0) {
+            hasValidItem = true;
+        }
+    });
+    
+    if (!hasValidItem) {
+        alert('Please add at least one item with quantity and rate');
+        return;
+    }
+    
+    // Get NEXT invoice number for this new invoice
+    const nextInvoiceNumber = await getNextInvoiceNumber();
+    
+    // Update the invoice number field with the next number
+    document.getElementById('invoiceNo').value = nextInvoiceNumber;
+    
+    // Get all items
+    const items=[];
+    document.querySelectorAll("#billBody tr").forEach(r=>{
+        items.push({
+            srNo:r.cells[0].innerText,
+            productName:r.cells[1].querySelector("input").value,
+            unitPCS:+r.cells[2].querySelector("input").value||0,
+            qtyKGS:+r.cells[3].querySelector("input").value||0,
+            rate:+r.cells[4].querySelector("input").value||0,
+            amount:+r.querySelector(".amt").innerText||0
+        });
+    });
 
- const clientNameValue = clientName.value;
- 
- // ✅ Get client's payment summary from database
- let clientPaymentSummary = null;
- try {
-   const paymentRes = await fetch(`http://localhost:5000/api/summary/${clientNameValue}`);
-   if (paymentRes.ok) {
-     clientPaymentSummary = await paymentRes.json();
-   }
- } catch (error) {
-   console.error("Error fetching client payment summary:", error);
- }
+    // Get client's payment summary from database
+    let clientPaymentSummary = null;
+    try {
+        const paymentRes = await fetch(`http://localhost:5000/api/summary/${encodeURIComponent(clientNameValue)}`);
+        if (paymentRes.ok) {
+            clientPaymentSummary = await paymentRes.json();
+        }
+    } catch (error) {
+        console.error("Error fetching client payment summary:", error);
+    }
 
- const data={
-   clientName: clientNameValue,
-   mobile:mobile.value,
-   invoiceNo:invoiceNo.value,
-   invoiceDate:invoiceDate.value,
-   items,
-   subTotal:+subTotal.innerText,
-   roundOff:+roundOff.value||0,
-   grandTotal:+grandTotal.innerText,
-   // Add payment summary if available
-   paymentSummary: clientPaymentSummary
- };
+    const data={
+        clientName: clientNameValue,
+        mobile:document.getElementById('mobile').value,
+        invoiceNo:nextInvoiceNumber, // Use the next invoice number
+        invoiceDate:document.getElementById('invoiceDate').value,
+        items,
+        subTotal:+document.getElementById('subTotal').innerText,
+        roundOff:+document.getElementById('roundOff').value||0,
+        grandTotal:+document.getElementById('grandTotal').innerText,
+        // Add payment summary if available
+        paymentSummary: clientPaymentSummary
+    };
 
- // ✅ Save to backend
- const res=await fetch("http://localhost:5000/api/invoice",{
-   method:"POST",
-   headers:{"Content-Type":"application/json"},
-   body:JSON.stringify(data)
- });
- const result=await res.json();
+    // Show loading
+    const saveBtn = document.querySelector('.btn-download');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<span>Saving...</span>';
+    saveBtn.disabled = true;
 
- if(res.ok){
-   generatePDF(data);   // 👉 download PDF
-   alert(result.message||"Saved!");
-   loadTenantsWithPaymentInfo(); // Refresh the list
- } else {
-   alert("Error saving invoice");
- }
+    try {
+        // Save to backend
+        const res=await fetch("http://localhost:5000/api/invoice",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify(data)
+        });
+        
+        const result=await res.json();
+
+        if(res.ok){
+            // Generate and download PDF
+            generatePDF(data);
+            
+            // Show success message
+            alert(result.message||"Invoice saved successfully!");
+            
+            // Refresh the client list
+            loadTenantsWithPaymentInfo();
+            
+            // Clear form for next invoice (but keep invoice number as current + 1)
+            document.getElementById('billBody').innerHTML = '';
+            addRow(); // Add a fresh row
+            document.getElementById('subTotal').innerText = '0.00';
+            document.getElementById('grandTotal').innerText = '0.00';
+            document.getElementById('roundOff').value = '0';
+            document.getElementById('pendingInfoBox').classList.remove('show');
+            
+            // Update current invoice number to the one we just used
+            currentInvoiceNumber = nextInvoiceNumber;
+            
+            // Set invoice number to current + 1 for next invoice
+            const nextNumberForDisplay = incrementInvoiceNumber(currentInvoiceNumber);
+            document.getElementById('invoiceNo').value = nextNumberForDisplay;
+            
+        } else {
+            alert("Error saving invoice: " + (result.error || "Unknown error"));
+            // Revert to current invoice number if save failed
+            document.getElementById('invoiceNo').value = currentInvoiceNumber;
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Failed to save invoice. Please check your connection.");
+        // Revert to current invoice number if error
+        document.getElementById('invoiceNo').value = currentInvoiceNumber;
+    } finally {
+        // Restore button
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    }
 }
 
 // ✅ UPDATED PDF generator to show pending amount
 function generatePDF(data){
- const { jsPDF } = window.jspdf;
- const doc = new jsPDF();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
 
- doc.setFont("helvetica", "normal");
+    doc.setFont("helvetica", "normal");
 
- // ===== HEADER =====
- doc.setFontSize(16);
- doc.setFont("helvetica", "bold");
- doc.text("ADESH ALUMINIUM", 105, 15, { align: "center" });
+    // ===== HEADER =====
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("ADESH ALUMINIUM", 105, 15, { align: "center" });
 
- doc.setFontSize(11);
- doc.setFont("helvetica", "normal");
- doc.text("CHALLAN", 105, 22, { align: "center" });
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text("CHALLAN", 105, 22, { align: "center" });
 
- // ===== CLIENT BOX =====
- doc.rect(14, 28, 182, 18);
- doc.line(120, 28, 120, 46);
+    // ===== CLIENT BOX =====
+    doc.rect(14, 28, 182, 18);
+    doc.line(120, 28, 120, 46);
 
- doc.setFontSize(10);
- doc.text(`M/s: ${data.clientName}`, 18, 35);
- doc.text(`Mo: ${data.mobile}`, 18, 42);
+    doc.setFontSize(10);
+    doc.text(`M/s: ${data.clientName}`, 18, 35);
+    doc.text(`Mo: ${data.mobile}`, 18, 42);
 
- doc.text(`Invoice No: ${data.invoiceNo}`, 125, 35);
- doc.text(`Date: ${data.invoiceDate}`, 125, 42);
+    doc.text(`Invoice No: ${data.invoiceNo}`, 125, 35);
+    doc.text(`Date: ${data.invoiceDate}`, 125, 42);
 
- // ===== CLIENT PAYMENT STATUS (NEW SECTION) =====
- if (data.paymentSummary && data.paymentSummary.totalPending > 0) {
-   const paymentY = 50;
-   doc.setFontSize(9);
-   doc.setFont("helvetica", "bold");
-   doc.text("CUSTOMER PAYMENT STATUS:", 14, paymentY);
-   
-   doc.setFont("helvetica", "normal");
-   doc.setFontSize(8);
-   doc.text(`Previous Pending Amount: ₹${data.paymentSummary.totalPending.toFixed(2)}`, 14, paymentY + 4);
-   
-   // Draw a box around payment status
-   doc.rect(12, paymentY - 5, 184, 20);
-   
-   // Update Y position for table
-   var tableY = paymentY + 20;
- } else {
-   var tableY = 52;
- }
+    // ===== CLIENT PAYMENT STATUS (NEW SECTION) =====
+    if (data.paymentSummary && data.paymentSummary.totalPending > 0) {
+        const paymentY = 50;
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.text("CUSTOMER PAYMENT STATUS:", 14, paymentY);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.text(`Previous Pending Amount: ₹${data.paymentSummary.totalPending.toFixed(2)}`, 14, paymentY + 4);
+        
+        // Draw a box around payment status
+        doc.rect(12, paymentY - 5, 184, 20);
+        
+        // Update Y position for table
+        var tableY = paymentY + 20;
+    } else {
+        var tableY = 52;
+    }
 
- // ===== TABLE HEADER =====
- doc.rect(14, tableY, 182, 8);
- doc.line(25, tableY, 25, tableY+8);
- doc.line(90, tableY, 90, tableY+8);
- doc.line(115, tableY, 115, tableY+8);
- doc.line(140, tableY, 140, tableY+8);
- doc.line(165, tableY, 165, tableY+8);
+    // ===== TABLE HEADER =====
+    doc.rect(14, tableY, 182, 8);
+    doc.line(25, tableY, 25, tableY+8);
+    doc.line(90, tableY, 90, tableY+8);
+    doc.line(115, tableY, 115, tableY+8);
+    doc.line(140, tableY, 140, tableY+8);
+    doc.line(165, tableY, 165, tableY+8);
 
- doc.setFontSize(10);
- doc.setFont("helvetica", "bold");
- doc.text("Sr", 18, tableY+5);
- doc.text("Product", 35, tableY+5);
- doc.text("Qty", 97, tableY+5);
- doc.text("Unit", 122, tableY+5);
- doc.text("Rate", 145, tableY+5);
- doc.text("Amount", 168, tableY+5);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Sr", 18, tableY+5);
+    doc.text("Product", 35, tableY+5);
+    doc.text("Weight", 97, tableY+5);
+    // doc.text("Unit", 122, tableY+5);
+    doc.text("Rate", 145, tableY+5);
+    doc.text("Amount", 168, tableY+5);
 
- // ===== ITEMS =====
- doc.setFont("helvetica", "normal");
- let y = tableY + 8;
+    // ===== ITEMS =====
+    doc.setFont("helvetica", "normal");
+    let y = tableY + 8;
 
- data.items.forEach((item) => {
-   doc.rect(14, y, 182, 8);
-   doc.line(25, y, 25, y+8);
-   doc.line(90, y, 90, y+8);
-   doc.line(115, y, 115, y+8);
-   doc.line(140, y, 140, y+8);
-   doc.line(165, y, 165, y+8);
+    data.items.forEach((item) => {
+        doc.rect(14, y, 182, 8);
+        doc.line(25, y, 25, y+8);
+        doc.line(90, y, 90, y+8);
+        // doc.line(115, y, 115, y+8);
+        doc.line(140, y, 140, y+8);
+        doc.line(165, y, 165, y+8);
 
-   let qty = item.qtyKGS > 0 ? item.qtyKGS.toFixed(3) : item.unitPCS;
-   let unit = item.qtyKGS > 0 ? "KG" : "PCS";
+        let qty = item.qtyKGS > 0 ? item.qtyKGS.toFixed(3) : item.unitPCS;
+        let unit = item.qtyKGS > 0 ? "KG" : "PCS";
 
-   doc.text(item.srNo, 18, y+5);
-   doc.text(item.productName || "", 28, y+5);
-   doc.text(String(qty), 98, y+5);
-   doc.text(unit, 123, y+5);
-   doc.text(item.rate.toFixed(2), 145, y+5);
-   doc.text(item.amount.toFixed(2), 168, y+5);
+        doc.text(item.srNo, 18, y+5);
+        doc.text(item.productName || "", 28, y+5);
+        doc.text(String(qty), 98, y+5);
+        doc.text(unit, 123, y+5);
+        doc.text(item.rate.toFixed(2), 145, y+5);
+        doc.text(item.amount.toFixed(2), 168, y+5);
 
-   y += 8;
- });
+        y += 8;
+    });
 
- // ===== AMOUNT IN WORDS =====
- y += 8;
- doc.setFont("helvetica", "bold");
- doc.text("Bill Amount:", 14, y);
- doc.setFont("helvetica", "normal");
- doc.text(numberToWords(data.grandTotal), 40, y);
+    // ===== AMOUNT IN WORDS =====
+    y += 8;
+    doc.setFont("helvetica", "bold");
+    doc.text("Bill Amount:", 14, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(numberToWords(data.grandTotal), 40, y);
 
- // ===== TOTAL BOX =====
- y += 8;
- doc.rect(120, y-6, 76, 18);
- doc.text("Round Off", 125, y);
- doc.text("Grand Total", 125, y+8);
+    // ===== TOTAL BOX =====
+    y += 8;
+    doc.rect(120, y-6, 76, 18);
+    doc.text("Round Off", 125, y);
+    doc.text("Grand Total", 125, y+8);
 
- doc.text(data.roundOff.toFixed(2), 180, y, {align:"right"});
- doc.text(data.grandTotal.toFixed(2), 180, y+8, {align:"right"});
+    doc.text(data.roundOff.toFixed(2), 180, y, {align:"right"});
+    doc.text(data.grandTotal.toFixed(2), 180, y+8, {align:"right"});
 
- // ===== BALANCE SUMMARY (NEW SECTION) =====
- if (data.paymentSummary) {
-   y += 15;
-   
-   // Calculate new total pending after this invoice
-   const previousPending = data.paymentSummary.totalPending || 0;
-   const newTotalPending = previousPending + data.grandTotal;
-   
-   doc.setFontSize(9);
-   doc.setFont("helvetica", "bold");
-   doc.text("BALANCE SUMMARY", 14, y);
-   
-   doc.setFont("helvetica", "normal");
-   doc.setFontSize(8);
-   doc.text(`Previous Pending Amount: ₹${previousPending.toFixed(2)}`, 14, y + 5);
-   doc.text(`This Invoice Amount: ₹${data.grandTotal.toFixed(2)}`, 14, y + 10);
-   
-   // Draw a line
-   doc.line(14, y + 13, 80, y + 13);
-   
-   doc.setFont("helvetica", "bold");
-   doc.text(`New Total Pending Amount: ₹${newTotalPending.toFixed(2)}`, 14, y + 18);
-   
-   // Highlight the new total due
-   doc.setDrawColor(255, 0, 0); // Red color
-   doc.rect(12, y + 14, 86, 8);
-   doc.setDrawColor(0); // Reset to black
- }
+    // ===== BALANCE SUMMARY (NEW SECTION) =====
+    if (data.paymentSummary) {
+        y += 15;
+        
+        // Calculate new total pending after this invoice
+        const previousPending = data.paymentSummary.totalPending || 0;
+        const newTotalPending = previousPending + data.grandTotal;
+        
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.text("BALANCE SUMMARY", 14, y);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.text(`Previous Pending Amount: ₹${previousPending.toFixed(2)}`, 14, y + 5);
+        doc.text(`This Invoice Amount: ₹${data.grandTotal.toFixed(2)}`, 14, y + 10);
+        
+        // Draw a line
+        doc.line(14, y + 13, 80, y + 13);
+        
+        doc.setFont("helvetica", "bold");
+        doc.text(`New Total Pending Amount: ₹${newTotalPending.toFixed(2)}`, 14, y + 18);
+        
+        // Highlight the new total due
+        doc.setDrawColor(255, 0, 0); // Red color
+        doc.rect(12, y + 14, 86, 8);
+        doc.setDrawColor(0); // Reset to black
+    }
 
- // ===== SIGNATURE =====
- y += (data.paymentSummary ? 30 : 30);
- doc.setFont("helvetica", "normal");
- doc.text("For, Adesh Aluminium", 14, y);
- doc.line(140, y, 190, y);
- doc.text("(Authorised Signature)", 145, y+6);
+    // ===== SIGNATURE =====
+    y += (data.paymentSummary ? 30 : 30);
+    doc.setFont("helvetica", "normal");
+    doc.text("For, Adesh Aluminium", 14, y);
+    doc.line(140, y, 190, y);
+    doc.text("(Authorised Signature)", 145, y+6);
 
- // ===== FOOTER NOTE =====
- doc.setFontSize(7);
- doc.setFont("helvetica", "italic");
- doc.text("Note: This is a computer generated invoice. No signature required.", 105, 285, { align: "center" });
+    // ===== FOOTER NOTE =====
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "italic");
+    doc.text("Note: This is a computer generated invoice. No signature required.", 105, 285, { align: "center" });
 
- // ===== SAVE =====
- doc.save(`Invoice_${data.invoiceNo}_${data.clientName}.pdf`);
+    // ===== SAVE =====
+    doc.save(`Invoice_${data.invoiceNo}_${data.clientName}.pdf`);
 }
 
 // Add event listener for mobile input blur to update mobile in dropdown
@@ -2348,10 +2493,13 @@ document.getElementById('mobile').addEventListener('blur', function(e) {
     }
 });
 
-window.onload = () => {
+// Update window.onload
+window.onload = async () => {
     addRow();
-    loadTenantsWithPaymentInfo(); // Changed from loadTenants()
     setTodayDate();
+    await loadTenantsWithPaymentInfo();
+    await setCurrentInvoiceNumber(); // Set current invoice number (not increment)
+    console.log("Page loaded successfully");
 };
 </script>
 </body>

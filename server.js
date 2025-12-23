@@ -1199,6 +1199,32 @@ function getTableName(name) {
 }
 
 // Initialize tenants and payments table
+// async function initDB() {
+//   await pool.query(`
+//     CREATE TABLE IF NOT EXISTS tenants (
+//       id SERIAL PRIMARY KEY,
+//       name TEXT UNIQUE NOT NULL,
+//       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+//     );
+//   `);
+  
+//   await pool.query(`
+//     CREATE TABLE IF NOT EXISTS payments_history (
+//       id SERIAL PRIMARY KEY,
+//       client_name TEXT NOT NULL,
+//       invoice_id INTEGER NOT NULL,
+//       invoice_no TEXT NOT NULL,
+//       payment_amount DECIMAL(10,2) NOT NULL,
+//       payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//       remaining_balance DECIMAL(10,2) NOT NULL,
+//       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+//     );
+//   `);
+//   console.log("✅ Database tables ready");
+// }
+
+
+
 async function initDB() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS tenants (
@@ -1220,6 +1246,15 @@ async function initDB() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
+  
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS invoice_counter (
+      month_year TEXT PRIMARY KEY,
+      last_number INTEGER DEFAULT 0,
+      last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+  
   console.log("✅ Database tables ready");
 }
 initDB();
@@ -1577,87 +1612,95 @@ app.get("/api/summary/:clientName", async (req, res) => {
   }
 });
 
-// Get next invoice number
-app.get("/api/invoice/next-number", async (req, res) => {
-  try {
-    const { clientName } = req.query;
-    const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-    const now = new Date();
-    const currentMonth = monthNames[now.getMonth()];
-    
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS invoice_counter (
-        month_year TEXT PRIMARY KEY,
-        last_number INTEGER DEFAULT 0,
-        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    
-    const monthYear = `${currentMonth}_${now.getFullYear()}`;
-    
-    await pool.query(`
-      INSERT INTO invoice_counter (month_year, last_number) 
-      VALUES ($1, 0)
-      ON CONFLICT (month_year) DO NOTHING
-    `, [monthYear]);
-    
-    const result = await pool.query(`
-      UPDATE invoice_counter 
-      SET last_number = last_number + 1,
-          last_updated = CURRENT_TIMESTAMP
-      WHERE month_year = $1
-      RETURNING last_number
-    `, [monthYear]);
-    
-    const nextNumber = result.rows[0].last_number;
-    const invoiceNumber = `${currentMonth}/${nextNumber.toString().padStart(3, '0')}`;
-    
-    res.json({ 
-      invoiceNumber,
-      success: true 
-    });
-    
-  } catch (err) {
-    console.error("Error generating invoice number:", err);
-    const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-    const now = new Date();
-    const currentMonth = monthNames[now.getMonth()];
-    const timestamp = Date.now() % 1000;
-    const fallbackNumber = `${currentMonth}/${timestamp.toString().padStart(3, '0')}`;
-    
-    res.json({ 
-      invoiceNumber: fallbackNumber,
-      success: false,
-      message: "Using fallback number"
-    });
-  }
-});
-
-// Get current invoice number
+// Get current invoice number (without incrementing)
 app.get("/api/invoice/current-number", async (req, res) => {
   try {
     const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
     const now = new Date();
     const currentMonth = monthNames[now.getMonth()];
     
-    const result = await pool.query(
-      `SELECT MAX(invoice_no) as last_invoice FROM information_schema.tables t
-       CROSS JOIN LATERAL (
-         SELECT MAX(invoice_no) as max_invoice FROM public."${getTableName('temp')}"
-       ) s
-       WHERE table_schema = 'public' AND table_name LIKE 'invoice_%' 
-       AND table_name != 'tenants'`
-    );
+    // Get all tenant tables
+    const tenantTables = await pool.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_name LIKE 'invoice_%'
+    `);
     
-    if (result.rows[0].last_invoice) {
-      res.json({ invoiceNumber: result.rows[0].last_invoice });
+    let maxNumber = 0;
+    let foundInvoice = null;
+    
+    // Check each client's invoice table for the highest invoice number of current month
+    for (const table of tenantTables.rows) {
+      try {
+        const result = await pool.query(`
+          SELECT invoice_no, created_at
+          FROM ${table.table_name}
+          WHERE invoice_no LIKE $1
+          ORDER BY created_at DESC
+          LIMIT 1
+        `, [`${currentMonth}/%`]);
+        
+        if (result.rows.length > 0) {
+          const invoiceNo = result.rows[0].invoice_no;
+          const match = invoiceNo.match(/^[A-Z]{3}\/(\d+)$/);
+          if (match) {
+            const num = parseInt(match[1]);
+            if (num > maxNumber) {
+              maxNumber = num;
+              foundInvoice = invoiceNo;
+            }
+          }
+        }
+      } catch (err) {
+        continue;
+      }
+    }
+    
+    if (foundInvoice) {
+      res.json({ 
+        invoiceNumber: foundInvoice,
+        success: true 
+      });
     } else {
-      res.json({ invoiceNumber: `${currentMonth}/001` });
+      // Check counter table as fallback
+      const currentYear = now.getFullYear();
+      const monthYear = `${currentMonth}_${currentYear}`;
+      
+      const counterResult = await pool.query(
+        'SELECT last_number FROM invoice_counter WHERE month_year = $1',
+        [monthYear]
+      );
+      
+      if (counterResult.rows.length > 0) {
+        const lastNumber = counterResult.rows[0].last_number;
+        const invoiceNumber = `${currentMonth}/${lastNumber.toString().padStart(3, '0')}`;
+        res.json({ 
+          invoiceNumber,
+          success: true 
+        });
+      } else {
+        // No invoices yet this month
+        res.json({ 
+          invoiceNumber: `${currentMonth}/000`,
+          success: true 
+        });
+      }
     }
     
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
+    console.error("Error getting current invoice number:", err);
+    
+    // Fallback
+    const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const now = new Date();
+    const currentMonth = monthNames[now.getMonth()];
+    
+    res.json({ 
+      invoiceNumber: `${currentMonth}/000`,
+      success: false,
+      message: "Using fallback"
+    });
   }
 });
 
