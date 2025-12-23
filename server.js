@@ -1170,14 +1170,12 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const bodyParser = require("body-parser");
 const { Pool } = require("pg");
 const path = require("path");
 const app = express();
 const fs = require("fs");
 app.use(express.json());
 app.use(cors());
-app.use(bodyParser.json());
 
 // const isLocal = process.env.DATABASE_URL.includes("localhost") 
 //              || process.env.DATABASE_URL.includes("127.0.0.1");
