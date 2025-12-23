@@ -1182,13 +1182,24 @@ app.use(bodyParser.json());
 const isLocal = process.env.DATABASE_URL.includes("localhost") 
              || process.env.DATABASE_URL.includes("127.0.0.1");
 
+// const pool = new Pool({
+//   connectionString: process.env.DATABASE_URL,
+//   // ssl: isLocal ? false : { rejectUnauthorized: false },
+//     ssl: {
+//     ca: fs.readFileSync("./ca.pem").toString()
+//   }
+// });
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  // ssl: isLocal ? false : { rejectUnauthorized: false },
-    ssl: {
-    ca: fs.readFileSync("./ca.pem").toString()
-  }
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: 13399,
+  max: 20, // Max clients in the pool
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
+
 
 // Serve static HTML files
 app.use(express.static(__dirname));
